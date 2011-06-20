@@ -7,7 +7,7 @@ CP=$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH
 
 FIRSTARG=$1
 
-MEMORY=8g
+MEMORY=2g
 
 case $FIRSTARG in
   [0-9] | [0-9][0-9]) 
@@ -29,6 +29,7 @@ cat <<EOF
 Updown 0.1 commands: 
 
   run               	run the main method of a given class
+  train-maxent          train a maxent model
 
 Include --help with any option for more information
 EOF
@@ -39,9 +40,9 @@ if [ $CMD = 'build' ]; then
 
     java -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
 
-#elif [ $CMD = 'geotext-lp' ]; then
+elif [ $CMD = 'train-maxent' ]; then
 
-#     $SCALA_COMMAND opennlp.textgrounder.app.GeoTextLabelProp $*
+     $SCALA_COMMAND updown.app.TrainMaxentModel $*
 
 else  
 

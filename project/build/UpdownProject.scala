@@ -2,7 +2,14 @@ import sbt._
 
 class UpdownProject (info: ProjectInfo) extends DefaultProject(info) /*with assembly.AssemblyBuilder*/ {
   override def disableCrossPaths = true 
-  //val argot = "org.clapper" %% "argot" % "0.3.1"
-}
 
+  // Add repositories
+  val gsonRepo = "gson repo" at "http://google-gson.googlecode.com/svn/mavenrepo"
+  val opennlpRepo = "opennlp sourceforge repo" at "http://opennlp.sourceforge.net/maven2"
+
+  // Dependencies
+  val opennlpTools = "org.apache.opennlp" % "opennlp-tools" % "1.5.1-incubating"
+  val opennlpMaxent = "org.apache.opennlp" % "opennlp-maxent" % "3.0.1-incubating"
+  val argot = "org.clapper" %% "argot" % "0.3.1"
+}
 
