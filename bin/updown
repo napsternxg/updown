@@ -38,7 +38,7 @@ EOF
 
 if [ $CMD = 'build' ]; then
 
-    java -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
+    $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
 
 elif [ $CMD = 'train-maxent' ]; then
 
