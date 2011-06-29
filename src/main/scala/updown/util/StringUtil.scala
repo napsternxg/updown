@@ -33,4 +33,10 @@ object StringUtil {
       return strippedToken
     return s
   }
+
+  def generateBigrams(unigrams: List[String]): List[String] = {
+    if(unigrams.length == 0) return Nil
+    val innerBigrams = if(unigrams.length >= 2) unigrams.sliding(2).map(bi => bi(0)+" "+bi(1)).toList else Nil
+    ("$ "+unigrams(0) :: innerBigrams) ::: (unigrams(unigrams.length-1)+" $" :: Nil)
+  }
 }
