@@ -2,6 +2,7 @@ package updown.lex
 
 class MPQALexicon(entries: scala.collection.mutable.HashMap[String, MPQAEntry]) {
   def apply(s:String) = entries(s)
+  def contains(s:String) = entries.contains(s)
   val keySet = entries.keySet
 }
 

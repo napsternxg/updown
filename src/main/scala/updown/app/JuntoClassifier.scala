@@ -54,7 +54,7 @@ object JuntoClassifier {
   val modelInputFile = parser.option[String](List("m", "model"), "model", "model input")
   val mpqaInputFile = parser.option[String](List("p", "mpqa"), "mpqa", "MPQA sentiment lexicon input file")
   val followerGraphFile = parser.option[String](List("f", "follower-graph"), "follower-graph", "twitter follower graph input file")
-  val refCorpusProbsFile = parser.option[String](List("r", "reference-corpus-probabilities"), "reference-corpus-probabilities", "reference corpus probabilities input file")
+  val refCorpusProbsFile = parser.option[String](List("r", "reference-corpus-probabilities"), "ref-corp-probs", "reference corpus probabilities input file")
 
   val mu1 = parser.option[Double](List("u", "mu1"), "mu1", "seed injection probability")
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations")
@@ -89,12 +89,11 @@ object JuntoClassifier {
 
     val graph = createGraph(tweets, followerGraphFile.value.get, modelInputFile.value.get, mpqaInputFile.value.get)
 
-    //graph.WriteToFileWithAlphabet("input-graph")
-    graph.SaveEstimatedScores("input-graph")
+    //graph.SaveEstimatedScores("input-graph")
 
     JuntoRunner(graph, mu1.value.getOrElse(DEFAULT_MU1), .01, .01, iterations.value.getOrElse(DEFAULT_ITERATIONS), false)
 
-    graph.SaveEstimatedScores("output-graph")
+    //graph.SaveEstimatedScores("output-graph")
 
     val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, String]
 
@@ -120,11 +119,12 @@ object JuntoClassifier {
     }
 
     PerTweetEvaluator.evaluate(tweets)
+    PerUserEvaluator.evaluate(tweets)
   }
   
   def createGraph(tweets: List[Tweet], followerGraphFile: String, modelInputFile: String, mpqaInputFile: String) = {
     val edges = getTweetNgramEdges(tweets) ::: getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(tweets)
-    val seeds = getMaxentSeeds(tweets, modelInputFile) ::: getMPQASeeds(MPQALexicon(mpqaInputFile))/* ::: getEmoticonSeeds*/
+    val seeds = getMaxentSeeds(tweets, modelInputFile) ::: getMPQASeeds(MPQALexicon(mpqaInputFile)) ::: getEmoticonSeeds
     GraphBuilder(edges, seeds)
   }
 
