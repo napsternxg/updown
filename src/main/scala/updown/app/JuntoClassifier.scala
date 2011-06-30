@@ -56,6 +56,8 @@ object JuntoClassifier {
   val followerGraphFile = parser.option[String](List("f", "follower-graph"), "follower-graph", "twitter follower graph input file")
   val refCorpusProbsFile = parser.option[String](List("r", "reference-corpus-probabilities"), "ref-corp-probs", "reference corpus probabilities input file")
 
+  val edgeSeedSetOption = parser.option[String](List("e", "edge-seed-set-selection"), "edge-seed-set-selection", "edge/seed set selection")
+
   val mu1 = parser.option[Double](List("u", "mu1"), "mu1", "seed injection probability")
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations")
 

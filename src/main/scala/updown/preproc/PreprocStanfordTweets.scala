@@ -14,7 +14,7 @@ object PreprocStanfordTweets {
 
       if(sentimentRaw == "4" || sentimentRaw == "0") {
 
-        val tokens = BasicTokenizer(tweet)
+        val tokens = TwokenizeWrapper(tweet)
         val features = tokens ::: StringUtil.generateBigrams(tokens)
         
         val label = if(sentimentRaw == "4") "1" else "-1"

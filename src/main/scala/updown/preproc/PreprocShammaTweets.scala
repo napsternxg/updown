@@ -32,7 +32,7 @@ object PreprocShammaTweets {
           if(math.max(posFraction, negFraction) > .5) {
             val label = if(posFraction > negFraction) "1" else "-1"
             
-            val tokens = BasicTokenizer(tweet)
+            val tokens = TwokenizeWrapper(tweet)
             val features = tokens ::: StringUtil.generateBigrams(tokens)
 
             print(tweetid + "|" + username + "|")
