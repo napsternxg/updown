@@ -5,22 +5,37 @@ import java.io._
 
 object PreprocEmoticonTweets {
 
+  val topNUnigrams = new scala.collection.mutable.HashMap[String, Int] { override def default(s: String) = 0 }
+  val TOP_N = 1000
+
   def main(args: Array[String]) = {
     val out = new BufferedWriter(new FileWriter(args(2)))
     val stoplist = scala.io.Source.fromFile(args(3)).getLines.toSet
     val engDict = scala.io.Source.fromFile(args(4)).getLines.toSet
-    preprocFile(args(0), "1", out, stoplist, engDict) //happy
-    preprocFile(args(1), "-1", out, stoplist, engDict) //sad
+    val countTopN = args.length >= 6
+    preprocFile(args(0), "1", out, stoplist, engDict, countTopN) //happy
+    preprocFile(args(1), "-1", out, stoplist, engDict, countTopN) //sad
     out.close
+
+    if(countTopN) {
+      val topNOut = new BufferedWriter(new FileWriter(args(5)))
+      
+      val topNSorted = topNUnigrams.toList.filter(_._1.length >= 2).sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N-1)
+
+      topNSorted.foreach(p => topNOut.write(p._1+" "+p._2+"\n"))
+
+      topNOut.close
+    }
   }
 
-  def preprocFile(inFilename: String, label: String, out: BufferedWriter, stoplist: Set[String], engDict: Set[String]) = {
+  def preprocFile(inFilename: String, label: String, out: BufferedWriter, stoplist: Set[String], engDict: Set[String], countTopN: Boolean) = {
     for(line <- scala.io.Source.fromFile(inFilename).getLines) {
       val tokens = TwokenizeWrapper(line)
       if(isEnglish(tokens, engDict)) {
         val bigrams = StringUtil.generateBigrams(tokens)
         
         val unigrams = tokens.filterNot(stoplist(_))
+        if(countTopN) unigrams.foreach(u => topNUnigrams.put(u, topNUnigrams(u)+1))
         val features = unigrams ::: bigrams
 
         for(feature <- features) out.write(feature+",")

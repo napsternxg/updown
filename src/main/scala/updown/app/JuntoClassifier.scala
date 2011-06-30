@@ -26,6 +26,7 @@ object JuntoClassifier {
 
   val DEFAULT_MU1 = .005
   val DEFAULT_ITERATIONS = 100
+  val DEFAULT_EDGE_SEED_SET = "nfmoe"
 
   // for weighting MPQA seeds
   val BIG = 0.9
@@ -57,6 +58,7 @@ object JuntoClassifier {
   val refCorpusProbsFile = parser.option[String](List("r", "reference-corpus-probabilities"), "ref-corp-probs", "reference corpus probabilities input file")
 
   val edgeSeedSetOption = parser.option[String](List("e", "edge-seed-set-selection"), "edge-seed-set-selection", "edge/seed set selection")
+  val targetsInputFile = parser.option[String](List("t", "targets"), "targets", "targets")
 
   val mu1 = parser.option[Double](List("u", "mu1"), "mu1", "seed injection probability")
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations")
@@ -82,6 +84,8 @@ object JuntoClassifier {
       sys.exit(0)
     }
 
+    val edgeSeedSet = edgeSeedSetOption.value.getOrElse(DEFAULT_EDGE_SEED_SET)
+
     val tweets = TweetFeatureReader(goldInputFile.value.get)
 
     if(refCorpusProbsFile.value != None) {
@@ -89,7 +93,7 @@ object JuntoClassifier {
       thisCorpusNgramProbs = computeNgramProbs(tweets)
     }
 
-    val graph = createGraph(tweets, followerGraphFile.value.get, modelInputFile.value.get, mpqaInputFile.value.get)
+    val graph = createGraph(tweets, followerGraphFile.value.get, modelInputFile.value.get, mpqaInputFile.value.get, edgeSeedSet)
 
     //graph.SaveEstimatedScores("input-graph")
 
@@ -120,13 +124,22 @@ object JuntoClassifier {
       }
     }
 
-    PerTweetEvaluator.evaluate(tweets)
-    PerUserEvaluator.evaluate(tweets)
+    PerTweetEvaluator(tweets)
+    PerUserEvaluator(tweets)
+    if(targetsInputFile.value != None) {
+      val targets = new scala.collection.mutable.HashMap[String, String]
+
+      scala.io.Source.fromFile(targetsInputFile.value.get).getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+      PerTargetEvaluator(tweets, targets)
+    }
   }
   
-  def createGraph(tweets: List[Tweet], followerGraphFile: String, modelInputFile: String, mpqaInputFile: String) = {
-    val edges = getTweetNgramEdges(tweets) ::: getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(tweets)
-    val seeds = getMaxentSeeds(tweets, modelInputFile) ::: getMPQASeeds(MPQALexicon(mpqaInputFile)) ::: getEmoticonSeeds
+  def createGraph(tweets: List[Tweet], followerGraphFile: String, modelInputFile: String, mpqaInputFile: String, edgeSeedSet: String) = {
+    val edges = (if(edgeSeedSet.contains("n")) getTweetNgramEdges(tweets) else Nil) :::
+                (if(edgeSeedSet.contains("f")) (getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(tweets)) else Nil)
+    val seeds = (if(edgeSeedSet.contains("m")) getMaxentSeeds(tweets, modelInputFile) else Nil) :::
+                (if(edgeSeedSet.contains("o")) getMPQASeeds(MPQALexicon(mpqaInputFile)) else Nil) :::
+                (if(edgeSeedSet.contains("e")) getEmoticonSeeds else Nil)
     GraphBuilder(edges, seeds)
   }
 
@@ -135,8 +148,13 @@ object JuntoClassifier {
       for(ngram <- tweet.features) yield {
         //println(TWEET_ + tweet.id + "   " + NGRAM_ + ngram + "   " + getNgramWeight(ngram))
         val weight = getNgramWeight(ngram)
-        if(weight > 0.0)
-          new Edge(TWEET_ + tweet.id, NGRAM_ + ngram, weight)
+        if(weight > 0.0) {
+          val edge = new Edge(TWEET_ + tweet.id, NGRAM_ + ngram, weight)
+          if(ngram == "meetings are") {
+            println(edge)
+          }
+          edge//new Edge(TWEET_ + tweet.id, NGRAM_ + ngram, weight)
+        }
         else
           null
       }
@@ -245,6 +263,98 @@ object JuntoClassifier {
       }
       else
         return 0.0
+    }
+  }
+}
+
+object TransductiveJuntoClassifier {
+
+  import JuntoClassifier._
+
+  import ArgotConverters._
+  val parser = new ArgotParser("updown run updown.app.TransductiveJuntoClassifier", preUsage=Some("Updown"))
+  
+  val goldInputFile = parser.option[String](List("g", "gold"), "gold", "gold training labeled input")
+  val testInputFile = parser.option[String](List("t", "test"), "test", "gold test labeled input")
+  //val modelInputFile = parser.option[String](List("m", "model"), "model", "model input")
+  //val mpqaInputFile = parser.option[String](List("p", "mpqa"), "mpqa", "MPQA sentiment lexicon input file")
+  val followerGraphFile = parser.option[String](List("f", "follower-graph"), "follower-graph", "twitter follower graph input file (TRAIN)")
+  val followerGraphFileTest = parser.option[String](List("h", "follower-graph-test"), "follower-graph-test", "twitter follower graph input (TEST)")
+  val refCorpusProbsFile = parser.option[String](List("r", "reference-corpus-probabilities"), "ref-corp-probs", "reference corpus probabilities input file")
+
+  val edgeSeedSetOption = parser.option[String](List("e", "edge-seed-set-selection"), "edge-seed-set-selection", "edge/seed set selection")
+
+  val mu1 = parser.option[Double](List("u", "mu1"), "mu1", "seed injection probability")
+  val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations")
+  
+  def main(args: Array[String]) = {
+
+    try { parser.parse(args) }
+    catch { case e: ArgotUsageException => println(e.message); sys.exit(0)}
+
+    val edgeSeedSet = edgeSeedSetOption.value.getOrElse(DEFAULT_EDGE_SEED_SET)
+
+    val trainTweets = TweetFeatureReader(goldInputFile.value.get)
+    val testTweets = TweetFeatureReader(testInputFile.value.get)
+    val totalTweets = trainTweets ::: testTweets
+
+    //val testTweetIds = testTweets.map(_.id).toSet
+
+    if(refCorpusProbsFile.value != None) {
+      refCorpusNgramProbs = loadRefCorpusNgramProbs(refCorpusProbsFile.value.get)
+      thisCorpusNgramProbs = computeNgramProbs(totalTweets)
+    }
+
+    val graph = createTransductiveGraph(trainTweets, /*followerGraphFile.value.get, */ testTweets, /*followerGraphFileTest.value.get, */ edgeSeedSet)
+
+    JuntoRunner(graph, mu1.value.getOrElse(DEFAULT_MU1), .01, .01, iterations.value.getOrElse(DEFAULT_ITERATIONS), false)
+
+    val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, String]
+
+    for ((id, vertex) <- graph._vertices) {
+      val nodeRE(nodeType, nodeName) = id
+      if(nodeType == TWEET_) {
+        val predictions = vertex.GetEstimatedLabelScores
+        val posProb = predictions.get(POS)
+        val negProb = predictions.get(NEG)
+
+        if(posProb >= negProb)
+          tweetIdsToPredictedLabels.put(nodeName, POS)
+        else
+          tweetIdsToPredictedLabels.put(nodeName, NEG)
+      }
+    }
+
+    for(tweet <- testTweets) {
+      if(tweetIdsToPredictedLabels.containsKey(tweet.id)) {
+        tweet.systemLabel = tweetIdsToPredictedLabels(tweet.id)
+        //println(TWEET_ + tweet.id + "\t" + tweet.systemLabel)
+      }
+    }
+
+    PerTweetEvaluator.evaluate(testTweets)
+    PerUserEvaluator.evaluate(testTweets)
+  }
+
+  def createTransductiveGraph(trainTweets: List[Tweet], /*followerGraphFile: String, */ testTweets: List[Tweet], /* followerGraphFileTest: String, */ edgeSeedSet: String) = {
+    val totalTweets = trainTweets ::: testTweets
+    val edges = (if(edgeSeedSet.contains("n")) getTweetNgramEdges(totalTweets) else Nil) /*:::
+                (if(edgeSeedSet.contains("f")) (getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(totalTweets) :::
+                                                getFollowerEdges(followerGraphFileTest)) else Nil)*/
+    val seeds = getGoldSeeds(trainTweets)
+    /*val seeds = (if(edgeSeedSet.contains("m")) getMaxentSeeds(tweets, modelInputFile) else Nil) :::
+                (if(edgeSeedSet.contains("o")) getMPQASeeds(MPQALexicon(mpqaInputFile)) else Nil) :::
+                (if(edgeSeedSet.contains("e")) getEmoticonSeeds else Nil)*/
+    edges.filter(_.weight <= 0.5).foreach(println)
+    GraphBuilder(edges, Nil)
+  }
+
+  def getGoldSeeds(tweets: List[Tweet]): List[Label] = {
+    for(tweet <- tweets) yield {
+      if(tweet.goldLabel == POS)
+        new Label(TWEET_ + tweet.id, POS, 1.0)
+      else
+        new Label(TWEET_ + tweet.id, NEG, 1.0)
     }
   }
 }

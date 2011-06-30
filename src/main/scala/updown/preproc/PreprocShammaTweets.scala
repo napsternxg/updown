@@ -9,7 +9,10 @@ object PreprocShammaTweets {
 
   def main(args: Array[String]) {
     val lines = scala.io.Source.fromFile(args(0)).getLines
+    val stoplist = scala.io.Source.fromFile(args(1)).getLines.toSet
 
+    var numTweets = 0
+    var numPosTweets = 0
     for(line <- lines) {
 
       val roughTokens = line.split("\t")
@@ -31,9 +34,11 @@ object PreprocShammaTweets {
           //println("negFraction: " + negFraction)
           if(math.max(posFraction, negFraction) > .5) {
             val label = if(posFraction > negFraction) "1" else "-1"
+            if(label == "1") numPosTweets += 1
+            numTweets += 1
             
             val tokens = TwokenizeWrapper(tweet)
-            val features = tokens ::: StringUtil.generateBigrams(tokens)
+            val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
 
             print(tweetid + "|" + username + "|")
             for(feature <- features) print(feature+",")
@@ -41,7 +46,8 @@ object PreprocShammaTweets {
           }
         }
       }
-
     }
+
+    System.err.println("Preprocessed " + numTweets + " tweets. Fraction positive: " + (numPosTweets.toFloat/numTweets))
   }
 }
