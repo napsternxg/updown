@@ -28,6 +28,8 @@ object JuntoClassifier {
   val DEFAULT_ITERATIONS = 100
   val DEFAULT_EDGE_SEED_SET = "nfmoe"
 
+  val TOP_N = 20
+
   // for weighting MPQA seeds
   val BIG = 0.9
   val BIG_COMP = .1
@@ -48,6 +50,8 @@ object JuntoClassifier {
   var refCorpusNgramProbs:scala.collection.mutable.HashMap[String, Double] = null
   var thisCorpusNgramProbs:scala.collection.mutable.HashMap[String, Double] = null
 
+  var wordCount = 0
+
   import ArgotConverters._
   val parser = new ArgotParser("updown run updown.app.JuntoClassifier", preUsage=Some("Updown"))
   
@@ -59,6 +63,7 @@ object JuntoClassifier {
 
   val edgeSeedSetOption = parser.option[String](List("e", "edge-seed-set-selection"), "edge-seed-set-selection", "edge/seed set selection")
   val targetsInputFile = parser.option[String](List("t", "targets"), "targets", "targets")
+  val topNOutputFile = parser.option[String](List("z", "top-n-file"), "top-n-file", "top-n-file")
 
   val mu1 = parser.option[Double](List("u", "mu1"), "mu1", "seed injection probability")
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations")
@@ -93,7 +98,9 @@ object JuntoClassifier {
       thisCorpusNgramProbs = computeNgramProbs(tweets)
     }
 
-    val graph = createGraph(tweets, followerGraphFile.value.get, modelInputFile.value.get, mpqaInputFile.value.get, edgeSeedSet)
+    val lexicon = MPQALexicon(mpqaInputFile.value.get)
+
+    val graph = createGraph(tweets, followerGraphFile.value.get, modelInputFile.value.get, lexicon, edgeSeedSet)
 
     //graph.SaveEstimatedScores("input-graph")
 
@@ -102,6 +109,9 @@ object JuntoClassifier {
     //graph.SaveEstimatedScores("output-graph")
 
     val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, String]
+
+    val ngramsToPositivity = new scala.collection.mutable.HashMap[String, Double]
+    val ngramsToNegativity = new scala.collection.mutable.HashMap[String, Double]
 
     for ((id, vertex) <- graph._vertices) {
       val nodeRE(nodeType, nodeName) = id
@@ -114,6 +124,15 @@ object JuntoClassifier {
           tweetIdsToPredictedLabels.put(nodeName, POS)
         else
           tweetIdsToPredictedLabels.put(nodeName, NEG)
+      }
+      else if(topNOutputFile.value != None && nodeType == NGRAM_ && !lexicon.contains(nodeName)
+              && getNgramWeight(nodeName) >= 1.0 && thisCorpusNgramProbs(nodeName)*wordCount >= 5.0) {
+        val predictions = vertex.GetEstimatedLabelScores
+        val posProb = predictions.get(POS)
+        val negProb = predictions.get(NEG)
+
+        ngramsToPositivity.put(nodeName, posProb)
+        ngramsToNegativity.put(nodeName, negProb)
       }
     }
 
@@ -132,13 +151,25 @@ object JuntoClassifier {
       scala.io.Source.fromFile(targetsInputFile.value.get).getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
       PerTargetEvaluator(tweets, targets)
     }
+
+    if(topNOutputFile.value != None) {
+      val tnout = new BufferedWriter(new FileWriter(topNOutputFile.value.get))
+      val topNPos = ngramsToPositivity.toList/*.filterNot(p => lexicon.contains(p._1))*/.sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
+      val topNNeg = ngramsToPositivity.toList.sortWith((x, y) => x._2 <= y._2).slice(0, TOP_N)//ngramsToNegativity.toList/*.filterNot(p => lexicon.contains(p._1))*/.sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
+
+      topNPos.foreach(p => tnout.write(p._1+" "+p._2+"\n"))
+      tnout.write("\n\n\n")
+      topNNeg.foreach(p => tnout.write(p._1+" "+p._2+"\n"))
+
+      tnout.close
+    }
   }
   
-  def createGraph(tweets: List[Tweet], followerGraphFile: String, modelInputFile: String, mpqaInputFile: String, edgeSeedSet: String) = {
+  def createGraph(tweets: List[Tweet], followerGraphFile: String, modelInputFile: String, lexicon: MPQALexicon, edgeSeedSet: String) = {
     val edges = (if(edgeSeedSet.contains("n")) getTweetNgramEdges(tweets) else Nil) :::
                 (if(edgeSeedSet.contains("f")) (getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(tweets)) else Nil)
     val seeds = (if(edgeSeedSet.contains("m")) getMaxentSeeds(tweets, modelInputFile) else Nil) :::
-                (if(edgeSeedSet.contains("o")) getMPQASeeds(MPQALexicon(mpqaInputFile)) else Nil) :::
+                (if(edgeSeedSet.contains("o")) getMPQASeeds(lexicon) else Nil) :::
                 (if(edgeSeedSet.contains("e")) getEmoticonSeeds else Nil)
     GraphBuilder(edges, seeds)
   }
@@ -146,19 +177,15 @@ object JuntoClassifier {
   def getTweetNgramEdges(tweets: List[Tweet]): List[Edge] = {
     (for(tweet <- tweets) yield {
       for(ngram <- tweet.features) yield {
-        //println(TWEET_ + tweet.id + "   " + NGRAM_ + ngram + "   " + getNgramWeight(ngram))
         val weight = getNgramWeight(ngram)
+        //println(TWEET_ + tweet.id + "   " + NGRAM_ + ngram + "   " + weight)
         if(weight > 0.0) {
-          val edge = new Edge(TWEET_ + tweet.id, NGRAM_ + ngram, weight)
-          if(ngram == "meetings are") {
-            println(edge)
-          }
-          edge//new Edge(TWEET_ + tweet.id, NGRAM_ + ngram, weight)
+          Some(new Edge(TWEET_ + tweet.id, NGRAM_ + ngram, weight))
         }
         else
-          null
+          None
       }
-    }).flatten.filterNot(_ == null)
+    }).flatten.flatten
   }
 
   def getUserTweetEdges(tweets: List[Tweet]): List[Edge] = {
@@ -171,13 +198,13 @@ object JuntoClassifier {
   def getFollowerEdges(followerGraphFile: String): List[Edge] = {
     (for(line <- scala.io.Source.fromFile(followerGraphFile).getLines) yield {
       val tokens = line.split("\t")
-      if(tokens.length < 2)
-        null
+      if(tokens.length < 2 || tokens(0).length == 0 || tokens(1).length == 0)
+        None
       else {
         //println(USER_ + tokens(0) + "   " + USER_ + tokens(1))
-        new Edge(USER_ + tokens(0), USER_ + tokens(1), 1.0)
+        Some(new Edge(USER_ + tokens(0), USER_ + tokens(1), 1.0))
       }
-    }).filterNot(_ == null).toList
+    }).flatten.toList
   }
 
   def getMaxentSeeds(tweets: List[Tweet], modelInputFile: String): List[Label] = {
@@ -235,7 +262,7 @@ object JuntoClassifier {
 
   def computeNgramProbs(tweets: List[Tweet]): scala.collection.mutable.HashMap[String, Double] = {
     val probs = new scala.collection.mutable.HashMap[String, Double] { override def default(s: String) = 0.0 }
-    var wordCount = 0
+    /*var */wordCount = 0
     for(tweet <- tweets) {
       for(feature <- tweet.features) {
         probs.put(feature, probs(feature) + 1.0)
@@ -275,7 +302,7 @@ object TransductiveJuntoClassifier {
   val parser = new ArgotParser("updown run updown.app.TransductiveJuntoClassifier", preUsage=Some("Updown"))
   
   val goldInputFile = parser.option[String](List("g", "gold"), "gold", "gold training labeled input")
-  val testInputFile = parser.option[String](List("t", "test"), "test", "gold test labeled input")
+  val testInputFile = parser.option[String](List("v", "test"), "test", "gold test labeled input")
   //val modelInputFile = parser.option[String](List("m", "model"), "model", "model input")
   //val mpqaInputFile = parser.option[String](List("p", "mpqa"), "mpqa", "MPQA sentiment lexicon input file")
   val followerGraphFile = parser.option[String](List("f", "follower-graph"), "follower-graph", "twitter follower graph input file (TRAIN)")
@@ -283,6 +310,7 @@ object TransductiveJuntoClassifier {
   val refCorpusProbsFile = parser.option[String](List("r", "reference-corpus-probabilities"), "ref-corp-probs", "reference corpus probabilities input file")
 
   val edgeSeedSetOption = parser.option[String](List("e", "edge-seed-set-selection"), "edge-seed-set-selection", "edge/seed set selection")
+  val targetsInputFile = parser.option[String](List("t", "targets"), "targets", "targets")
 
   val mu1 = parser.option[Double](List("u", "mu1"), "mu1", "seed injection probability")
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations")
@@ -334,6 +362,12 @@ object TransductiveJuntoClassifier {
 
     PerTweetEvaluator.evaluate(testTweets)
     PerUserEvaluator.evaluate(testTweets)
+    if(targetsInputFile.value != None) {
+      val targets = new scala.collection.mutable.HashMap[String, String]
+
+      scala.io.Source.fromFile(targetsInputFile.value.get).getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+      PerTargetEvaluator(testTweets, targets)
+    }
   }
 
   def createTransductiveGraph(trainTweets: List[Tweet], /*followerGraphFile: String, */ testTweets: List[Tweet], /* followerGraphFileTest: String, */ edgeSeedSet: String) = {
@@ -345,8 +379,8 @@ object TransductiveJuntoClassifier {
     /*val seeds = (if(edgeSeedSet.contains("m")) getMaxentSeeds(tweets, modelInputFile) else Nil) :::
                 (if(edgeSeedSet.contains("o")) getMPQASeeds(MPQALexicon(mpqaInputFile)) else Nil) :::
                 (if(edgeSeedSet.contains("e")) getEmoticonSeeds else Nil)*/
-    edges.filter(_.weight <= 0.5).foreach(println)
-    GraphBuilder(edges, Nil)
+    //edges.filter(_.weight <= 0.5).foreach(println)
+    GraphBuilder(edges, seeds)
   }
 
   def getGoldSeeds(tweets: List[Tweet]): List[Label] = {

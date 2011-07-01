@@ -37,7 +37,7 @@ object PreprocShammaTweets {
             if(label == "1") numPosTweets += 1
             numTweets += 1
             
-            val tokens = TwokenizeWrapper(tweet)
+            val tokens = BasicTokenizer(tweet)//TwokenizeWrapper(tweet)
             val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
 
             print(tweetid + "|" + username + "|")

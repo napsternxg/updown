@@ -22,11 +22,12 @@ object PerUserEvaluator {
 
   val modelInputFile = parser.option[String](List("m", "model"), "model", "model input")
   val goldInputFile = parser.option[String](List("g", "gold"), "gold", "gold labeled input")
+  val doRandom = parser.option[String](List("r", "random"), "random", "do random")
 
   val POS = "POS"
   val NEG = "NEG"
 
-  val DEFAULT_MIN_TPU = 1
+  val DEFAULT_MIN_TPU = 3
 
   def apply(tweets: List[Tweet]) = evaluate(tweets)
 
@@ -40,8 +41,10 @@ object PerUserEvaluator {
     for(tweet <- tweets)
       usersToTweets.put(tweet.userid, usersToTweets(tweet.userid) ::: (tweet :: Nil))
 
-    for(userid <- usersToTweets.keys) {
-      val curTweets = usersToTweets(userid)
+    val usersToTweetsFiltered = usersToTweets.filter(p => p._2.length >= minTPU)
+
+    for(userid <- usersToTweetsFiltered.keys) {
+      val curTweets = usersToTweetsFiltered(userid)
 
       var numAbstained = 0
       if(curTweets.length >= minTPU) {
@@ -49,24 +52,28 @@ object PerUserEvaluator {
         var numSysPos = 0.0
         for(tweet <- curTweets) {
           if(tweet.goldLabel == POS) numGoldPos += 1
-          if(tweet.systemLabel == POS) numSysPos += 1
-          else if(tweet.systemLabel == null) numAbstained += 1
+          if(tweet.systemLabel == POS && doRandom.value == None) numSysPos += 1
+          else if(tweet.systemLabel == null || doRandom.value != None) numAbstained += 1
         }
 
         numSysPos += numAbstained.toFloat / 2
+        /*if(doRandom.value != None) {
+          numSysPos = numGoldPos / 2
+          numAbstained = 0
+        }*/
         totalError += math.pow((numGoldPos - numSysPos) / curTweets.length, 2)
         totalNumAbstained += numAbstained
       }
     }
 
-    totalError /= usersToTweets.size
+    totalError /= usersToTweetsFiltered.size
 
     println("\n***** PER USER EVAL *****")
 
     if(totalNumAbstained > 0)
       println(totalNumAbstained + " tweets were abstained on; assuming half (" + (totalNumAbstained.toFloat/2) + ") were positive.")
 
-    println("Number of users evaluated: " + usersToTweets.size + " (min of " + minTPU + " tweets per user)")
+    println("Number of users evaluated: " + usersToTweetsFiltered.size + " (min of " + minTPU + " tweets per user)")
     println("Mean squared error: " + totalError)
   }
 

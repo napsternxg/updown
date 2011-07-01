@@ -30,7 +30,7 @@ object PreprocHCRTweets {
 
           if((sentiment == "positive" || sentiment == "negative") && tweetid.length > 0 && username.length > 0 && tweet.length > 0 && target.length > 0) {  
           
-            val tokens = TwokenizeWrapper(tweet)
+            val tokens = BasicTokenizer(tweet)//TwokenizeWrapper(tweet)
             val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
             
             val label = if(sentiment == "positive") "1" else "-1"

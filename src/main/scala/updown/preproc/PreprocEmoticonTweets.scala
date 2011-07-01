@@ -20,7 +20,7 @@ object PreprocEmoticonTweets {
     if(countTopN) {
       val topNOut = new BufferedWriter(new FileWriter(args(5)))
       
-      val topNSorted = topNUnigrams.toList.filter(_._1.length >= 2).sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N-1)
+      val topNSorted = topNUnigrams.toList.filter(_._1.length >= 2).sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
 
       topNSorted.foreach(p => topNOut.write(p._1+" "+p._2+"\n"))
 
@@ -30,7 +30,7 @@ object PreprocEmoticonTweets {
 
   def preprocFile(inFilename: String, label: String, out: BufferedWriter, stoplist: Set[String], engDict: Set[String], countTopN: Boolean) = {
     for(line <- scala.io.Source.fromFile(inFilename).getLines) {
-      val tokens = TwokenizeWrapper(line)
+      val tokens = BasicTokenizer(line)//TwokenizeWrapper(line)
       if(isEnglish(tokens, engDict)) {
         val bigrams = StringUtil.generateBigrams(tokens)
         
