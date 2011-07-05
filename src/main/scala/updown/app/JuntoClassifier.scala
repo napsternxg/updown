@@ -154,12 +154,22 @@ object JuntoClassifier {
 
     if(topNOutputFile.value != None) {
       val tnout = new BufferedWriter(new FileWriter(topNOutputFile.value.get))
-      val topNPos = ngramsToPositivity.toList/*.filterNot(p => lexicon.contains(p._1))*/.sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
-      val topNNeg = ngramsToPositivity.toList.sortWith((x, y) => x._2 <= y._2).slice(0, TOP_N)//ngramsToNegativity.toList/*.filterNot(p => lexicon.contains(p._1))*/.sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
+      //val topNPos = ngramsToPositivity.toList/*.filterNot(p => lexicon.contains(p._1))*/.sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
+      //val topNNeg = ngramsToPositivity.toList.sortWith((x, y) => x._2 <= y._2).slice(0, TOP_N)//ngramsToNegativity.toList/*.filterNot(p => lexicon.contains(p._1))*/.sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
 
-      topNPos.foreach(p => tnout.write(p._1+" "+p._2+"\n"))
-      tnout.write("\n\n\n")
-      topNNeg.foreach(p => tnout.write(p._1+" "+p._2+"\n"))
+      val ngramsToRatios = ngramsToPositivity.toList.map(p => (p._1, p._2 / ngramsToNegativity(p._1)))
+
+      //topNPos.foreach(p => tnout.write(p._1+" "+p._2+"\n"))
+      //tnout.write("\n\n\n")
+      //topNNeg.foreach(p => tnout.write(p._1+" "+p._2+"\n"))
+      val mostPos = ngramsToRatios.sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
+      mostPos.foreach(p => tnout.write(p._1+"\t"+p._2+"\n"))
+      mostPos.foreach(p => tnout.write(p._1+", "))
+      tnout.write("\n\n\n\n")
+      val mostNeg = ngramsToRatios.sortWith((x, y) => x._2 <= y._2).slice(0, TOP_N)
+      mostNeg.foreach(p => tnout.write(p._1+"\t"+p._2+"\n"))
+      mostNeg.foreach(p => tnout.write(p._1+", "))
+      tnout.write("\n")
 
       tnout.close
     }
@@ -180,6 +190,7 @@ object JuntoClassifier {
         val weight = getNgramWeight(ngram)
         //println(TWEET_ + tweet.id + "   " + NGRAM_ + ngram + "   " + weight)
         if(weight > 0.0) {
+          //if(ngram == "mccain") println("mccain: " + weight)
           Some(new Edge(TWEET_ + tweet.id, NGRAM_ + ngram, weight))
         }
         else
@@ -333,7 +344,7 @@ object TransductiveJuntoClassifier {
       thisCorpusNgramProbs = computeNgramProbs(totalTweets)
     }
 
-    val graph = createTransductiveGraph(trainTweets, /*followerGraphFile.value.get, */ testTweets, /*followerGraphFileTest.value.get, */ edgeSeedSet)
+    val graph = createTransductiveGraph(trainTweets, followerGraphFile.value.get, testTweets, followerGraphFileTest.value.get, edgeSeedSet)
 
     JuntoRunner(graph, mu1.value.getOrElse(DEFAULT_MU1), .01, .01, iterations.value.getOrElse(DEFAULT_ITERATIONS), false)
 
@@ -370,11 +381,11 @@ object TransductiveJuntoClassifier {
     }
   }
 
-  def createTransductiveGraph(trainTweets: List[Tweet], /*followerGraphFile: String, */ testTweets: List[Tweet], /* followerGraphFileTest: String, */ edgeSeedSet: String) = {
+  def createTransductiveGraph(trainTweets: List[Tweet], followerGraphFile: String, testTweets: List[Tweet],  followerGraphFileTest: String, edgeSeedSet: String) = {
     val totalTweets = trainTweets ::: testTweets
-    val edges = (if(edgeSeedSet.contains("n")) getTweetNgramEdges(totalTweets) else Nil) /*:::
+    val edges = (if(edgeSeedSet.contains("n")) getTweetNgramEdges(totalTweets) else Nil) :::
                 (if(edgeSeedSet.contains("f")) (getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(totalTweets) :::
-                                                getFollowerEdges(followerGraphFileTest)) else Nil)*/
+                                                getFollowerEdges(followerGraphFileTest)) else Nil)
     val seeds = getGoldSeeds(trainTweets)
     /*val seeds = (if(edgeSeedSet.contains("m")) getMaxentSeeds(tweets, modelInputFile) else Nil) :::
                 (if(edgeSeedSet.contains("o")) getMPQASeeds(MPQALexicon(mpqaInputFile)) else Nil) :::

@@ -13,6 +13,7 @@ object PreprocShammaTweets {
 
     var numTweets = 0
     var numPosTweets = 0
+    var averageIAA = 0.0
     for(line <- lines) {
 
       val roughTokens = line.split("\t")
@@ -32,10 +33,12 @@ object PreprocShammaTweets {
           //println(ratings.length)
           //println("posFraction: " + posFraction)
           //println("negFraction: " + negFraction)
-          if(math.max(posFraction, negFraction) > .5) {
+          val majorityFraction = math.max(posFraction, negFraction)
+          if(majorityFraction > .5) {
             val label = if(posFraction > negFraction) "1" else "-1"
             if(label == "1") numPosTweets += 1
             numTweets += 1
+            averageIAA += majorityFraction
             
             val tokens = BasicTokenizer(tweet)//TwokenizeWrapper(tweet)
             val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
@@ -49,5 +52,6 @@ object PreprocShammaTweets {
     }
 
     System.err.println("Preprocessed " + numTweets + " tweets. Fraction positive: " + (numPosTweets.toFloat/numTweets))
+    System.err.println("Average inter-annotator agreement: " + averageIAA/numTweets)
   }
 }
