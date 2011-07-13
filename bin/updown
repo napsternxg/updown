@@ -52,6 +52,18 @@ elif [ $CMD = 'preproc-hcr' ]; then
 
      $SCALA_COMMAND updown.preproc.PreprocHCRTweets $*
 
+elif [ $CMD = 'per-tweet-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerTweetEvaluator $*
+
+elif [ $CMD = 'per-user-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerUserEvaluator $*
+
+elif [ $CMD = 'per-tweet-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerTweetEvaluator $*
+
 elif [ $CMD = 'train-maxent' ]; then
 
      $SCALA_COMMAND updown.app.TrainMaxentModel $*
