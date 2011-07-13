@@ -72,6 +72,10 @@ elif [ $CMD = 'lex-ratio' ]; then
 
      $SCALA_COMMAND updown.app.LexicalRatioClassifier $*
 
+elif [ $CMD = 'junto' ]; then
+
+     $SCALA_COMMAND updown.app.JuntoClassifier $*
+
 else  
 
     CLASS=
