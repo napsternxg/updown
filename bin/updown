@@ -68,6 +68,10 @@ elif [ $CMD = 'train-maxent' ]; then
 
      $SCALA_COMMAND updown.app.TrainMaxentModel $*
 
+elif [ $CMD = 'lex-ratio' ]; then
+
+     $SCALA_COMMAND updown.app.LexicalRatioClassifier $*
+
 else  
 
     CLASS=
