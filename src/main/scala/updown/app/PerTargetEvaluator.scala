@@ -13,6 +13,9 @@ import org.clapper.argot._
 
 /**
  *
+ * This object evaluates each tweet's system label against its gold label, and groups them according to target
+ * (for the HCR dataset only), giving an accuracy score for each target.
+ * 
  * @author Mike Speriosu
  */
 object PerTargetEvaluator {

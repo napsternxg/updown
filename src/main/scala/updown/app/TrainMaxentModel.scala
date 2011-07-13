@@ -22,7 +22,7 @@ object TrainMaxentModel {
   import ArgotConverters._
   val parser = new ArgotParser("updown run updown.app.TrainMaxentModel", preUsage=Some("Updown"))
 
-  val inputFile = parser.option[String](List("i", "input"), "input", "labeled tweet input")
+  val inputFile = parser.option[String](List("g", "gold"), "gold", "gold labeled tweet input")
   val outputFile = parser.option[String](List("m", "output"), "output", "model output")
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations (default = "+DEFAULT_ITERATIONS+")")
   val cutoff = parser.option[Int](List("c", "cutoff"), "cutoff", "number of times a feature must be seen to be used (default = "+DEFAULT_CUTOFF+")")

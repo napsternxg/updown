@@ -6,6 +6,14 @@ import updown.lex._
 import updown.data._
 import updown.data.io._
 
+/**
+ *
+ * This object classifies tweets according to whether they have more positive or negative words in the MPQA
+ * sentiment lexicon.
+ * 
+ * @author Mike Speriosu
+ */ 
+
 object LexicalRatioClassifier {
 
   val POS = "POS"

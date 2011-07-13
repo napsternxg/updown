@@ -13,6 +13,9 @@ import org.clapper.argot._
 
 /**
  *
+ * This object evaluates each user's overall system positivity (fraction of tweets labeled positive by the system)
+ * against his or her gold positivity (fraction of tweets truly positive), resulting in a mean squared error.
+ * 
  * @author Mike Speriosu
  */
 object PerUserEvaluator {

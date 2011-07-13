@@ -13,6 +13,9 @@ import org.clapper.argot._
 
 /**
  *
+ * This object evaluates each tweet's system label against its gold label on a per-tweet basis, giving an accuracy
+ * score.
+ * 
  * @author Mike Speriosu
  */
 object PerTweetEvaluator {

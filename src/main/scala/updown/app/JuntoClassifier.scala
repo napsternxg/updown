@@ -20,6 +20,10 @@ import scala.collection.JavaConversions._
 
 /**
  *
+ * This object performs the Modified Adsorption label propagation algorithm on a graph containing
+ * user nodes, unigram and bigram nodes (including hashtags), emoticon nodes, maxent seeds, MPQA seeds,
+ * and emoticon seeds.
+ * 
  * @author Mike Speriosu
  */
 object JuntoClassifier {
@@ -305,6 +309,16 @@ object JuntoClassifier {
   }
 }
 
+
+/**
+ *
+ * This object performs supervised transductive label propagation. One set of tweets is given as the training set,
+ * and its gold labels are used as seeds. The graph includes tweet nodes, ngram nodes, and follower edges for both
+ * the training set and a test set (whose gold labels are not included) which is evaluated on.
+ * 
+ * @author Mike Speriosu
+ */
+
 object TransductiveJuntoClassifier {
 
   import JuntoClassifier._
@@ -336,8 +350,6 @@ object TransductiveJuntoClassifier {
     val trainTweets = TweetFeatureReader(goldInputFile.value.get)
     val testTweets = TweetFeatureReader(testInputFile.value.get)
     val totalTweets = trainTweets ::: testTweets
-
-    //val testTweetIds = testTweets.map(_.id).toSet
 
     if(refCorpusProbsFile.value != None) {
       refCorpusNgramProbs = loadRefCorpusNgramProbs(refCorpusProbsFile.value.get)
@@ -387,10 +399,6 @@ object TransductiveJuntoClassifier {
                 (if(edgeSeedSet.contains("f")) (getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(totalTweets) :::
                                                 getFollowerEdges(followerGraphFileTest)) else Nil)
     val seeds = getGoldSeeds(trainTweets)
-    /*val seeds = (if(edgeSeedSet.contains("m")) getMaxentSeeds(tweets, modelInputFile) else Nil) :::
-                (if(edgeSeedSet.contains("o")) getMPQASeeds(MPQALexicon(mpqaInputFile)) else Nil) :::
-                (if(edgeSeedSet.contains("e")) getEmoticonSeeds else Nil)*/
-    //edges.filter(_.weight <= 0.5).foreach(println)
     GraphBuilder(edges, seeds)
   }
 
