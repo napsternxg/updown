@@ -60,9 +60,9 @@ elif [ $CMD = 'per-user-eval' ]; then
 
      $SCALA_COMMAND updown.app.PerUserEvaluator $*
 
-elif [ $CMD = 'per-tweet-eval' ]; then
+elif [ $CMD = 'per-target-eval' ]; then
 
-     $SCALA_COMMAND updown.app.PerTweetEvaluator $*
+     $SCALA_COMMAND updown.app.PerTargetEvaluator $*
 
 elif [ $CMD = 'train-maxent' ]; then
 
