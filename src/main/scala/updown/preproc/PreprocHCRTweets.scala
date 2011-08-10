@@ -14,6 +14,7 @@ object PreprocHCRTweets {
 
     var numTweets = 0
     var numPos = 0
+    var numNeg = 0
 
     var fields = reader.readNext
 
@@ -28,13 +29,18 @@ object PreprocHCRTweets {
           val sentiment = fields(4)
           val target = fields(5)
 
-          if((sentiment == "positive" || sentiment == "negative") && tweetid.length > 0 && username.length > 0 && tweet.length > 0 && target.length > 0) {  
+          if((sentiment == "positive" || sentiment == "negative" || sentiment == "neutral") && tweetid.length > 0 && username.length > 0 && tweet.length > 0 && target.length > 0) {  
           
             val tokens = BasicTokenizer(tweet)//TwokenizeWrapper(tweet)
             val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
             
-            val label = if(sentiment == "positive") "1" else "-1"
+	    var label = ""
+	    if (sentiment == "positive")  label = "1"
+	    if (sentiment == "negative")  label = "-1"
+	    if (sentiment == "neutral")  label = "0"
+	    
             if(label == "1") numPos += 1
+	    if(label == "-1") numNeg +=1
             numTweets += 1
             
             print(tweetid + "|" + username + "|")
@@ -54,6 +60,7 @@ object PreprocHCRTweets {
     reader.close
     if(targetWriter != null) targetWriter.close
 
-    System.err.println("Preprocessed " + numTweets + " tweets. Fraction positive: " + (numPos.toFloat/numTweets))
+    System.err.println("Preprocessed " + numTweets + " tweets. Fraction positive: " + (numPos.toFloat/numTweets) + "\tFraction Negative: " + (numNeg.toFloat/numTweets) 
+		       + "\tFraction Neutral: " + (1- ((numPos.toFloat/numTweets) +  (numNeg.toFloat/numTweets) ) ).toFloat)
   }
 }

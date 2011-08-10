@@ -1,3 +1,4 @@
+
 package updown.app
 
 import java.io._
@@ -32,7 +33,7 @@ object TrainMaxentModel {
     catch { case e: ArgotUsageException => println(e.message); sys.exit(0) }
 
     if(inputFile.value == None) {
-      println("You must specify a labeled tweet input file via -i.")
+      println("You must specify a labeled tweet input file via -g.") // changed "-i" to "-g"
       sys.exit(0)
     }
     if(outputFile.value == None) {

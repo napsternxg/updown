@@ -22,6 +22,7 @@ object PerTweetEvaluator {
 
   val POS = "POS"
   val NEG = "NEG"
+  val NEU = "NEU"
 
   import ArgotConverters._
   val parser = new ArgotParser("updown run updown.app.PerTweetEvaluator", preUsage=Some("Updown"))
@@ -46,8 +47,8 @@ object PerTweetEvaluator {
     println("\n***** PER TWEET EVAL *****")
 
     if(numAbstained > 0) {
-      correct += numAbstained.toFloat / 2
-      println(numAbstained + " tweets were abstained on; assuming half (" + (numAbstained.toFloat/2) + ") were correct.")
+      correct += numAbstained.toFloat / 3
+      println(numAbstained + " tweets were abstained on; assuming one-third (" + (numAbstained.toFloat/3) + ") were correct.")
     }
     println("Accuracy: "+(correct.toFloat/total)+" ("+correct+"/"+total+")")
   }
@@ -76,11 +77,25 @@ object PerTweetEvaluator {
     
     for(tweet <- tweets) {
       val result = model.eval(tweet.features.toArray)
-      
+//      val classOfResult = result.getClass      
+//      println("==========\nClass: "+ classOfResult + "\n==========") //tried to get at the type but failed
+
       val posProb = result(0)
       val negProb = result(1)
+      val neuProb = result(2)//this could be totally wrong but it looks so right.
 
-      tweet.systemLabel = if(posProb >= negProb) POS else NEG
+//      println("posProb: "+posProb+"\t negProb: "+negProb+"\t neuProb: "+neuProb)
+//      println("res0: "+result(0)+"\t res1: "+result(1)+"\t res2: "+result(2))
+      
+      //I know this is unsightly but logically it flows nicely..
+      if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = POS
+      else{
+	if(negProb >= posProb && negProb >= neuProb) tweet.systemLabel = NEG
+	else{
+	  if(neuProb >= posProb && neuProb >= negProb) tweet.systemLabel = NEU
+	}
+      }
+      
 
     }
 

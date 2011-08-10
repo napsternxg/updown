@@ -9,16 +9,18 @@ object PreprocEmoticonTweets {
   val TOP_N = 1000
 
   def main(args: Array[String]) = {
-    val out = new BufferedWriter(new FileWriter(args(2)))
-    val stoplist = scala.io.Source.fromFile(args(3)).getLines.toSet
-    val engDict = scala.io.Source.fromFile(args(4)).getLines.toSet
+    val out = new BufferedWriter(new FileWriter(args(3)))
+    val stoplist = scala.io.Source.fromFile(args(4)).getLines.toSet
+    val engDict = scala.io.Source.fromFile(args(5)).getLines.toSet
     val countTopN = args.length >= 6
     preprocFile(args(0), "1", out, stoplist, engDict, countTopN) //happy
     preprocFile(args(1), "-1", out, stoplist, engDict, countTopN) //sad
+    //it seems i just need to add one little command here:
+    preprocFile(args(2), "0", out, stoplist, engDict, countTopN) //neutral
     out.close
 
     if(countTopN) {
-      val topNOut = new BufferedWriter(new FileWriter(args(5)))
+      val topNOut = new BufferedWriter(new FileWriter(args(6)))
       
       val topNSorted = topNUnigrams.toList.filter(_._1.length >= 2).sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
 

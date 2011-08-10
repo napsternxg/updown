@@ -22,6 +22,7 @@ object TweetFeatureReader {
     label match {
       case "1" => "POS"
       case "-1" => "NEG"
+      case "0" => "NEU"
       case _ => label
     }
   }
