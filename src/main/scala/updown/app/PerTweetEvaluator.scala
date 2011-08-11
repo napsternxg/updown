@@ -71,6 +71,11 @@ object PerTweetEvaluator {
 
     val model = reader.getModel
 
+    val labels = model.getDataStructures()(2).asInstanceOf[Array[String]]
+    val posIndex = labels.indexOf("1")
+    val negIndex = labels.indexOf("-1")
+    val neuIndex = labels.indexOf("0")
+
     val goldLines = scala.io.Source.fromFile(goldInputFile.value.get).getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
@@ -80,9 +85,9 @@ object PerTweetEvaluator {
 //      val classOfResult = result.getClass      
 //      println("==========\nClass: "+ classOfResult + "\n==========") //tried to get at the type but failed
 
-      val posProb = result(0)
-      val negProb = result(1)
-      val neuProb = result(2)//this could be totally wrong but it looks so right.
+      val posProb = result(posIndex)
+      val negProb = result(negIndex)
+      val neuProb = if(neuIndex >= 0) result(neuIndex) else 0.0
 
 //      println("posProb: "+posProb+"\t negProb: "+negProb+"\t neuProb: "+neuProb)
 //      println("res0: "+result(0)+"\t res1: "+result(1)+"\t res2: "+result(2))
