@@ -85,11 +85,13 @@ object PerTweetEvaluator {
 //      val classOfResult = result.getClass      
 //      println("==========\nClass: "+ classOfResult + "\n==========") //tried to get at the type but failed
 
+
       val posProb = result(posIndex)
       val negProb = result(negIndex)
       val neuProb = if(neuIndex >= 0) result(neuIndex) else 0.0
 
-//      println("posProb: "+posProb+"\t negProb: "+negProb+"\t neuProb: "+neuProb)
+
+      println("posProb: "+posProb+"\t negProb: "+negProb+"\t neuProb: "+neuProb)
 //      println("res0: "+result(0)+"\t res1: "+result(1)+"\t res2: "+result(2))
       
       //I know this is unsightly but logically it flows nicely..
@@ -100,7 +102,7 @@ object PerTweetEvaluator {
 	  if(neuProb >= posProb && neuProb >= negProb) tweet.systemLabel = NEU
 	}
       }
-      
+      println("tweet.systemLabel is... " + tweet.systemLabel)
 
     }
 
