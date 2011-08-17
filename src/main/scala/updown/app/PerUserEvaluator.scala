@@ -29,55 +29,67 @@ object PerUserEvaluator {
 
   val POS = "POS"
   val NEG = "NEG"
+  val NEU = "NEU"
 
-  val DEFAULT_MIN_TPU = 3
+  val DEFAULT_MIN_TPU = 3 
 
   def apply(tweets: List[Tweet]) = evaluate(tweets)
 
   def evaluate(tweets: List[Tweet]) = {
-    var totalError = 0.0
+    var totalError = 0.0; var totalErrorAlt = 0.0
     var totalNumAbstained = 0
     val usersToTweets = new scala.collection.mutable.HashMap[String, List[Tweet]] { override def default(s: String) = List() }
 
     val minTPU = DEFAULT_MIN_TPU
 
-    for(tweet <- tweets)
-      usersToTweets.put(tweet.userid, usersToTweets(tweet.userid) ::: (tweet :: Nil))
+    for(tweet <- tweets) usersToTweets.put(tweet.userid, usersToTweets(tweet.userid) ::: (tweet :: Nil))
 
-    val usersToTweetsFiltered = usersToTweets.filter(p => p._2.length >= minTPU)
+    val usersToTweetsFiltered = usersToTweets.filter(p => p._2.length >= minTPU) 
 
     for(userid <- usersToTweetsFiltered.keys) {
       val curTweets = usersToTweetsFiltered(userid)
 
       var numAbstained = 0
       if(curTweets.length >= minTPU) {
-        var numGoldPos = 0
-        var numSysPos = 0.0
-        for(tweet <- curTweets) {
-          if(tweet.goldLabel == POS) numGoldPos += 1
-          if(tweet.systemLabel == POS && doRandom.value == None) numSysPos += 1
-          else if(tweet.systemLabel == null || doRandom.value != None) numAbstained += 1
+        var numGoldPos = 0.0; var numSysPos = 0.0
+	var numGoldNeg = 0.0; var numSysNeg = 0.0 
+        var numGoldNeu = 0.0; var numSysNeu = 0.0
+
+	for(tweet <- curTweets) {
+          if (tweet.goldLabel == POS) numGoldPos += 1
+	  else if (tweet.goldLabel == NEG) numGoldNeg += 1
+	  else if (tweet.goldLabel == NEU) numGoldNeu += 1
+          if (tweet.systemLabel == POS && doRandom.value == None) numSysPos += 1
+	  else if (tweet.systemLabel == NEG && doRandom.value == None) numSysNeg += 1
+	  else if (tweet.systemLabel == NEU && doRandom.value == None) numSysNeu += 1
+	  else if(tweet.systemLabel == null || doRandom.value != None) numAbstained += 1
         }
 
-        numSysPos += numAbstained.toFloat / 2
+        numSysPos += numAbstained.toFloat / 3
         /*if(doRandom.value != None) {
           numSysPos = numGoldPos / 2
           numAbstained = 0
         }*/
-        totalError += math.pow((numGoldPos - numSysPos) / curTweets.length, 2)
+        totalError += math.pow(((numGoldPos+numGoldNeg+numGoldNeu) - (numSysPos+numSysNeg+numSysNeu)) / curTweets.length, 2)
+	totalErrorAlt += math.pow(((numGoldPos) - (numSysPos)) / curTweets.length, 2)
         totalNumAbstained += numAbstained
       }
     }
 
     totalError /= usersToTweetsFiltered.size
+    totalErrorAlt /= usersToTweetsFiltered.size
 
     println("\n***** PER USER EVAL *****")
 
-    if(totalNumAbstained > 0)
-      println(totalNumAbstained + " tweets were abstained on; assuming half (" + (totalNumAbstained.toFloat/2) + ") were positive.")
+    if(totalNumAbstained > 0){
+     // println(totalNumAbstained + " tweets were abstained on; assuming half (" + (totalNumAbstained.toFloat/2) + ") were positive.")
+      println(totalNumAbstained + " tweets were abstained on; assuming one-third (" + (totalNumAbstained.toFloat/3) + ") were positive.")
+      
+    }
 
     println("Number of users evaluated: " + usersToTweetsFiltered.size + " (min of " + minTPU + " tweets per user)")
     println("Mean squared error: " + totalError)
+    println("Mean squared error for alternate way of calculatin' it: " + totalErrorAlt)
   }
 
   def main(args: Array[String]) {
@@ -98,7 +110,7 @@ object PerUserEvaluator {
 
     val model = reader.getModel
 
-    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get).getLines.toList
+    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get, "utf-8").getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
 
@@ -106,9 +118,11 @@ object PerUserEvaluator {
       val result = model.eval(tweet.features.toArray)
       
       val posProb = result(0)
-      val negProb = result(1)
-
-      tweet.systemLabel = if(posProb >= negProb) POS else NEG
+      val negProb = result(2) //should be able to use more robust get as in pertweetevaluator class
+      val neuProb = result(1)
+      if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = POS
+      else if (negProb > posProb && negProb > neuProb) tweet.systemLabel = NEG
+      else tweet.systemLabel == NEU
     }
 
     evaluate(tweets)

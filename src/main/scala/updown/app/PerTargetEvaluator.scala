@@ -29,6 +29,7 @@ object PerTargetEvaluator {
 
   val POS = "POS"
   val NEG = "NEG"
+  val NEU = "NEU"
 
   //val DEFAULT_MIN_TPU = 1
 
@@ -87,7 +88,8 @@ object PerTargetEvaluator {
       }
     }
 
-    totalError /= usersToTweets.size*/
+    totalError /= usersToTweets.size
+    ****/
 
     println("\n***** PER TARGET EVAL *****")
     if(numAbstained > 0)
@@ -125,7 +127,7 @@ object PerTargetEvaluator {
 
     val model = reader.getModel
 
-    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get).getLines.toList
+    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get,"utf-8").getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
 
@@ -133,7 +135,8 @@ object PerTargetEvaluator {
       val result = model.eval(tweet.features.toArray)
       
       val posProb = result(0)
-      val negProb = result(1)
+
+      val negProb = result(2)
 
       tweet.systemLabel = if(posProb >= negProb) POS else NEG
     }

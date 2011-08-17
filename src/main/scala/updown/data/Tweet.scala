@@ -9,5 +9,5 @@ class Tweet(val id:String,
   def this(id:String, userid:String, features:List[String], goldLabel:String) {
     this(id, userid, features, goldLabel, null)
   }
-  
+  override def toString = "id: " + id + "\t" + "userid: " + userid + "\t" + "features: " + features + "\t" + "goldLabel: " + goldLabel + "\tsystemLabel: " + systemLabel
 }

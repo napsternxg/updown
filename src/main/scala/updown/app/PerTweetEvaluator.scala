@@ -38,9 +38,11 @@ object PerTweetEvaluator {
     var numAbstained = tweets.count(_.systemLabel == null)
 
     for(tweet <- tweets) {
-      if(tweet.systemLabel == tweet.goldLabel) {
+//      println(tweet.goldLabel.getClass.toString)
+      if(tweet.systemLabel == tweet.goldLabel.toString.trim) {
         correct += 1
       }
+//      else println(tweet.systemLabel + "|" + tweet.goldLabel)
       total += 1
     }
 
@@ -52,6 +54,7 @@ object PerTweetEvaluator {
     }
     println("Accuracy: "+(correct.toFloat/total)+" ("+correct+"/"+total+")")
   }
+
 
   def main(args: Array[String]) {
     try { parser.parse(args) }
@@ -72,37 +75,40 @@ object PerTweetEvaluator {
     val model = reader.getModel
 
     val labels = model.getDataStructures()(2).asInstanceOf[Array[String]]
-    val posIndex = labels.indexOf("1")
-    val negIndex = labels.indexOf("-1")
-    val neuIndex = labels.indexOf("0")
+    val posIndex = labels.indexOf("1 ")
+    val negIndex = labels.indexOf("-1 ")
+    val neuIndex = labels.indexOf("0 ")
+    var test = (labels(0).toString == "0 " || labels(0).toString == "-1 " || labels(0).toString == "1 ") 
+    println(posIndex + " " + negIndex + " " + neuIndex)
+    println(labels(0) + " " + labels(1) + " " + labels(2))
+    println(test)
+//    for (i <- labels) println(i)
 
-    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get).getLines.toList
+    
+    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get,"utf-8").getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
     
     for(tweet <- tweets) {
+     //println(tweet.toString)
       val result = model.eval(tweet.features.toArray)
-//      val classOfResult = result.getClass      
+//      val classOfResult = result.getClass.toString      
 //      println("==========\nClass: "+ classOfResult + "\n==========") //tried to get at the type but failed
 
-
-      val posProb = result(posIndex)
-      val negProb = result(negIndex)
-      val neuProb = if(neuIndex >= 0) result(neuIndex) else 0.0
-
-
-      println("posProb: "+posProb+"\t negProb: "+negProb+"\t neuProb: "+neuProb)
-//      println("res0: "+result(0)+"\t res1: "+result(1)+"\t res2: "+result(2))
       
-      //I know this is unsightly but logically it flows nicely..
-      if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = POS
-      else{
-	if(negProb >= posProb && negProb >= neuProb) tweet.systemLabel = NEG
-	else{
-	  if(neuProb >= posProb && neuProb >= negProb) tweet.systemLabel = NEU
-	}
-      }
-      println("tweet.systemLabel is... " + tweet.systemLabel)
+      val posProb = if(posIndex >= 0) result(posIndex) else 0.0
+      val negProb = if(negIndex >= 0) result(negIndex) else 0.0
+      val neuProb = if (negIndex >= 0) result(neuIndex) else 0.0
+
+//      println("posProb: "+posProb+"\t negProb: "+negProb+"\t neuProb: "+neuProb)
+//      println("resPos: "+result(posIndex)+"\t resNeg: "+result(negIndex)+"\t resNeu: "+result(neuIndex))
+      
+
+      if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = "1"//POS
+      else if(negProb >= posProb && negProb >= neuProb) tweet.systemLabel = "-1" //NEG
+      else if(neuProb >= posProb && neuProb >= negProb) tweet.systemLabel = "0" //NEU
+      
+//      println("tweet.systemLabel is... " + tweet.systemLabel)
 
     }
 

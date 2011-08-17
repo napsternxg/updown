@@ -45,6 +45,7 @@ object JuntoClassifier {
   val NGRAM_ = "ngram_"
   val POS = "POS"
   val NEG = "NEG"
+  val NEU = "NEU"
 
   val posEmoticons = """:) :D =D =) :] =] :-) :-D :-] ;) ;D ;] ;-) ;-D ;-]""".split(" ")
   val negEmoticons = """:( =( :[ =[ :-( :-[ :’( :’[ D:""".split(" ")
@@ -116,29 +117,35 @@ object JuntoClassifier {
 
     val ngramsToPositivity = new scala.collection.mutable.HashMap[String, Double]
     val ngramsToNegativity = new scala.collection.mutable.HashMap[String, Double]
-
+    val ngramsToNeutrality = new scala.collection.mutable.HashMap[String, Double]
     for ((id, vertex) <- graph._vertices) {
       val nodeRE(nodeType, nodeName) = id
       if(nodeType == TWEET_) {
         val predictions = vertex.GetEstimatedLabelScores
         val posProb = predictions.get(POS)
         val negProb = predictions.get(NEG)
+	val neuProb = predictions.get(NEU)
 
-        if(posProb >= negProb)
+        if(posProb >= negProb && posProb >= neuProb)
           tweetIdsToPredictedLabels.put(nodeName, POS)
-        else
+        else if(negProb >= posProb && negProb >= neuProb)
           tweetIdsToPredictedLabels.put(nodeName, NEG)
+	else 
+	  tweetIdsToPredictedLabels.put(nodeName, NEU)
       }
-      else if(topNOutputFile.value != None && nodeType == NGRAM_ && !lexicon.contains(nodeName)
-              && getNgramWeight(nodeName) >= 1.0 && thisCorpusNgramProbs(nodeName)*wordCount >= 5.0) {
-        val predictions = vertex.GetEstimatedLabelScores
-        val posProb = predictions.get(POS)
-        val negProb = predictions.get(NEG)
-
-        ngramsToPositivity.put(nodeName, posProb)
-        ngramsToNegativity.put(nodeName, negProb)
-      }
-    }
+	else if(topNOutputFile.value != None && nodeType == NGRAM_ && !lexicon.contains(nodeName)
+		&& getNgramWeight(nodeName) >= 1.0 && thisCorpusNgramProbs(nodeName)*wordCount >= 5.0) {
+		  val predictions = vertex.GetEstimatedLabelScores
+		  val posProb = predictions.get(POS)
+		  val negProb = predictions.get(NEG)
+		  val neuProb = predictions.get(NEU)
+		  
+		  ngramsToPositivity.put(nodeName, posProb)
+		  ngramsToNegativity.put(nodeName, negProb)
+		  ngramsToNeutrality.put(nodeName, neuProb)
+		  
+		}
+	}
 
     for(tweet <- tweets) {
       if(tweetIdsToPredictedLabels.containsKey(tweet.id)) {
@@ -152,7 +159,7 @@ object JuntoClassifier {
     if(targetsInputFile.value != None) {
       val targets = new scala.collection.mutable.HashMap[String, String]
 
-      scala.io.Source.fromFile(targetsInputFile.value.get).getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+      scala.io.Source.fromFile(targetsInputFile.value.get,"utf-8").getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
       PerTargetEvaluator(tweets, targets)
     }
 
@@ -211,7 +218,7 @@ object JuntoClassifier {
   }
 
   def getFollowerEdges(followerGraphFile: String): List[Edge] = {
-    (for(line <- scala.io.Source.fromFile(followerGraphFile).getLines) yield {
+    (for(line <- scala.io.Source.fromFile(followerGraphFile,"utf-8").getLines) yield {
       val tokens = line.split("\t")
       if(tokens.length < 2 || tokens(0).length == 0 || tokens(1).length == 0)
         None
@@ -230,11 +237,12 @@ object JuntoClassifier {
     (for(tweet <- tweets) yield {
       val result = model.eval(tweet.features.toArray)
       val posProb = result(0)
-      val negProb = result(1)
+      val negProb = result(2) //oughta be able to get with index thingy as was done in PerTweetEvaluator
+      val neuProb = result(1)
 
       //println(TWEET_ + tweet.id + "   " + POS + "   " + posProb)
       //println(TWEET_ + tweet.id + "   " + NEG + "   " + negProb)
-      new Label(TWEET_ + tweet.id, POS, posProb) :: new Label(TWEET_ + tweet.id, NEG, negProb) :: Nil
+      new Label(TWEET_ + tweet.id, POS, posProb) :: new Label(TWEET_ + tweet.id, NEG, negProb) :: new Label(TWEET_ + tweet.id, NEU, neuProb):: Nil
     }).flatten
   }
 
@@ -252,8 +260,11 @@ object JuntoClassifier {
         else if(entry.isWeak && entry.isPositive) SMALL_COMP
         else if(entry.isStrong && entry.isNegative) BIG
         else /*if(entry.isWeak && entry.isNegative)*/ SMALL
+
+      val neuWeight = 0.5  //Matt has little to no inkling of what is appropriate here.
+
       
-      new Label(NGRAM_ + word, POS, posWeight) :: new Label(NGRAM_ + word, NEG, negWeight) :: Nil
+      new Label(NGRAM_ + word, POS, posWeight) :: new Label(NGRAM_ + word, NEG, negWeight) :: new Label(NGRAM_ + word, NEU, neuWeight) :: Nil
     }).flatten
   }
 
@@ -261,7 +272,9 @@ object JuntoClassifier {
     (for(emo <- posEmoticons) yield { new Label(NGRAM_ + emo, POS, BIG) ::
                                      new Label(NGRAM_ + emo, NEG, BIG_COMP) :: Nil}).toList.flatten :::
     (for(emo <- negEmoticons) yield { new Label(NGRAM_ + emo, NEG, BIG) ::
-                                     new Label(NGRAM_ + emo, POS, BIG_COMP) :: Nil}).toList.flatten
+                                     new Label(NGRAM_ + emo, POS, BIG_COMP) :: Nil}).toList.flatten :::
+    (for(emo <- negEmoticons) yield { new Label(NGRAM_ + emo, NEG, BIG) ::
+				     new Label(NGRAM_ + emo, POS, BIG_COMP) :: Nil}).toList.flatten
   }
 
   def loadRefCorpusNgramProbs(filename: String): scala.collection.mutable.HashMap[String, Double] = {
@@ -368,11 +381,13 @@ object TransductiveJuntoClassifier {
         val predictions = vertex.GetEstimatedLabelScores
         val posProb = predictions.get(POS)
         val negProb = predictions.get(NEG)
-
-        if(posProb >= negProb)
+	val neuProb = predictions.get(NEU)
+        if(posProb >= negProb && posProb >= neuProb)
           tweetIdsToPredictedLabels.put(nodeName, POS)
-        else
+        else if(negProb >= posProb && negProb >= neuProb)
           tweetIdsToPredictedLabels.put(nodeName, NEG)
+	else 
+	   tweetIdsToPredictedLabels.put(nodeName, NEU)
       }
     }
 
@@ -388,7 +403,7 @@ object TransductiveJuntoClassifier {
     if(targetsInputFile.value != None) {
       val targets = new scala.collection.mutable.HashMap[String, String]
 
-      scala.io.Source.fromFile(targetsInputFile.value.get).getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+      scala.io.Source.fromFile(targetsInputFile.value.get,"utf-8").getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
       PerTargetEvaluator(testTweets, targets)
     }
   }
@@ -406,8 +421,10 @@ object TransductiveJuntoClassifier {
     for(tweet <- tweets) yield {
       if(tweet.goldLabel == POS)
         new Label(TWEET_ + tweet.id, POS, 1.0)
-      else
+      else if (tweet.goldLabel == NEG)
         new Label(TWEET_ + tweet.id, NEG, 1.0)
+      else 
+	new Label(TWEET_ + tweet.id, NEG, 1.0)
     }
   }
 }

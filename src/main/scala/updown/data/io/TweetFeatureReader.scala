@@ -3,12 +3,11 @@ package updown.data.io
 import updown.data._
 
 object TweetFeatureReader {
-
-  val featureRowRE = """^([^|]+)\|([^|]+)\|(.*),([^,]+)$""".r
+  val featureRowRE = """^([^|]+)\|([^|]+)\|(.*),([^,]+)$""".r //python verbose regexes are so much nicer :/
 
   def apply(inputFile: String):List[Tweet] = {
 
-    val lines = scala.io.Source.fromFile(inputFile).getLines.toList
+    val lines = scala.io.Source.fromFile(inputFile, "utf-8").getLines.toList
 
     for(line <- lines) yield {
       val featureRowRE(tweetid, userid, featureString, label) = line

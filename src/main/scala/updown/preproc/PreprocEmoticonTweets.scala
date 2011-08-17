@@ -7,11 +7,11 @@ object PreprocEmoticonTweets {
 
   val topNUnigrams = new scala.collection.mutable.HashMap[String, Int] { override def default(s: String) = 0 }
   val TOP_N = 1000
-
+  
   def main(args: Array[String]) = {
     val out = new BufferedWriter(new FileWriter(args(3)))
-    val stoplist = scala.io.Source.fromFile(args(4)).getLines.toSet
-    val engDict = scala.io.Source.fromFile(args(5)).getLines.toSet
+    val stoplist = scala.io.Source.fromFile(args(4),"utf-8").getLines.toSet
+    val engDict = scala.io.Source.fromFile(args(5),"utf-8").getLines.toSet
     val countTopN = args.length >= 6
     preprocFile(args(0), "1", out, stoplist, engDict, countTopN) //happy
     preprocFile(args(1), "-1", out, stoplist, engDict, countTopN) //sad
@@ -31,7 +31,7 @@ object PreprocEmoticonTweets {
   }
 
   def preprocFile(inFilename: String, label: String, out: BufferedWriter, stoplist: Set[String], engDict: Set[String], countTopN: Boolean) = {
-    for(line <- scala.io.Source.fromFile(inFilename).getLines) {
+    for(line <- scala.io.Source.fromFile(inFilename,"utf-8").getLines) {
       val tokens = BasicTokenizer(line)//TwokenizeWrapper(line)
       if(isEnglish(tokens, engDict)) {
         val bigrams = StringUtil.generateBigrams(tokens)

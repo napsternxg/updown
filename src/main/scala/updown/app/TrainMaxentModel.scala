@@ -24,7 +24,7 @@ object TrainMaxentModel {
   val parser = new ArgotParser("updown run updown.app.TrainMaxentModel", preUsage=Some("Updown"))
 
   val inputFile = parser.option[String](List("g", "gold"), "gold", "gold labeled tweet input")
-  val outputFile = parser.option[String](List("m", "output"), "output", "model output")
+  val outputFile = parser.option[String](List("m", "output"), "output", "model output") //Matt votes to change abbrev from "m" to "o"...
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations (default = "+DEFAULT_ITERATIONS+")")
   val cutoff = parser.option[Int](List("c", "cutoff"), "cutoff", "number of times a feature must be seen to be used (default = "+DEFAULT_CUTOFF+")")
 
@@ -37,7 +37,7 @@ object TrainMaxentModel {
       sys.exit(0)
     }
     if(outputFile.value == None) {
-      println("You must specify a model output file via -m.")
+       println("You must specify a model output file via -m.")
       sys.exit(0)
     }
 

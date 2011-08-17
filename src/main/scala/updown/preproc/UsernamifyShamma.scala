@@ -3,15 +3,15 @@ package updown.preproc
 object UsernamifyShamma {
   def main(args: Array[String]) = {
     val userIdsToTweetIds = new scala.collection.mutable.HashMap[String, String] { override def default(s: String) = "" }
-    scala.io.Source.fromFile(args(0)).getLines.foreach(l => if(l.split(" ").length >= 2) userIdsToTweetIds.put(l.split(" ")(1), l.split(" ")(0)))
+    scala.io.Source.fromFile(args(0),"utf-8").getLines.foreach(l => if(l.split(" ").length >= 2) userIdsToTweetIds.put(l.split(" ")(1), l.split(" ")(0)))
     //userIdsToTweetIds.toList.foreach(println)
 
     val userIdsToUserIds = new scala.collection.mutable.HashMap[String, String]
-    scala.io.Source.fromFile(args(1)).getLines.foreach(l => if(l.split(" ").length >= 2) userIdsToUserIds.put(l.split(" ")(0), l.split(" ")(1)))
+    scala.io.Source.fromFile(args(1),"utf-8").getLines.foreach(l => if(l.split(" ").length >= 2) userIdsToUserIds.put(l.split(" ")(0), l.split(" ")(1)))
     //userIdsToUserIds.toList.foreach(println)
 
     val tweetIdsToUsernames = new scala.collection.mutable.HashMap[String, String]
-    scala.io.Source.fromFile(args(2)).getLines.foreach(l => tweetIdsToUsernames.put(l.split("\\|")(0), l.split("\\|")(1)))
+    scala.io.Source.fromFile(args(2),"utf-8").getLines.foreach(l => tweetIdsToUsernames.put(l.split("\\|")(0), l.split("\\|")(1)))
     //tweetIdsToUsernames.toList.foreach(println)
 
     for((userid1, userid2) <- userIdsToUserIds) {
