@@ -82,14 +82,14 @@ object PerUserEvaluator {
     println("\n***** PER USER EVAL *****")
 
     if(totalNumAbstained > 0){
-     // println(totalNumAbstained + " tweets were abstained on; assuming half (" + (totalNumAbstained.toFloat/2) + ") were positive.")
+      //println(totalNumAbstained + " tweets were abstained on; assuming half (" + (totalNumAbstained.toFloat/2) + ") were positive.")
       println(totalNumAbstained + " tweets were abstained on; assuming one-third (" + (totalNumAbstained.toFloat/3) + ") were positive.")
       
     }
 
     println("Number of users evaluated: " + usersToTweetsFiltered.size + " (min of " + minTPU + " tweets per user)")
     println("Mean squared error: " + totalError)
-    println("Mean squared error for alternate way of calculatin' it: " + totalErrorAlt)
+    //println("Mean squared error for alternate way of calculatin' it which may or may not come out to be the same number: " + totalErrorAlt)
   }
 
   def main(args: Array[String]) {
@@ -109,6 +109,12 @@ object PerUserEvaluator {
     val reader = new BinaryGISModelReader(dataInputStream)
 
     val model = reader.getModel
+    
+    /* Caution! Confusing code reuse below! */
+    val labels = model.getDataStructures()(2).asInstanceOf[Array[String]]
+    val posIndex = labels.indexOf("1")
+    val negIndex = labels.indexOf("-1")
+    val neuIndex = labels.indexOf("0 ")
 
     val goldLines = scala.io.Source.fromFile(goldInputFile.value.get, "utf-8").getLines.toList
 
@@ -117,12 +123,12 @@ object PerUserEvaluator {
     for(tweet <- tweets) {
       val result = model.eval(tweet.features.toArray)
       
-      val posProb = result(0)
-      val negProb = result(2) //should be able to use more robust get as in pertweetevaluator class
-      val neuProb = result(1)
+      val posProb = result(posIndex)//result(0)
+      val negProb = result(negIndex)//result(2)
+      val neuProb = result(neuIndex)//result(1)
       if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = POS
       else if (negProb > posProb && negProb > neuProb) tweet.systemLabel = NEG
-      else tweet.systemLabel == NEU
+      else if (neuProb > posProb && neuProb > negProb) tweet.systemLabel == NEU
     }
 
     evaluate(tweets)
