@@ -1,0 +1,91 @@
+#!/bin/bash
+
+JARS=`echo $UPDOWN_DIR/lib/*.jar $UPDOWN_DIR/lib_managed/*/*.jar $UPDOWN_DIR/output/*.jar $UPDOWN_DIR/target/*.jar | tr ' ' ':'`
+SCALA_LIB="$UPDOWN_DIR/project/boot/scala-2.9.0/lib/scala-library.jar"
+
+CP=$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH
+
+FIRSTARG=$1
+
+MEMORY=2g
+
+case $FIRSTARG in
+  [0-9] | [0-9][0-9]) 
+	MEMORY="${FIRSTARG}g"
+	shift
+	;;
+    *) ;;
+esac
+
+JAVA_COMMAND="java -Xmx$MEMORY -classpath $CP"
+SCALA_COMMAND="scala -classpath $CP"
+
+CMD=$1
+shift
+
+help()
+{
+cat <<EOF
+Updown 0.1 commands: 
+
+  run               	run the main method of a given class
+  train-maxent          train a maxent model
+
+Include --help with any option for more information
+EOF
+}
+
+
+if [ $CMD = 'build' ]; then
+
+    $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
+
+elif [ $CMD = 'preproc-stanford' ]; then
+
+     $SCALA_COMMAND updown.preproc.PreprocStanfordTweets $*
+
+elif [ $CMD = 'preproc-shamma' ]; then
+
+     $SCALA_COMMAND updown.preproc.PreprocShammaTweets $*
+
+elif [ $CMD = 'preproc-hcr' ]; then
+
+     $SCALA_COMMAND updown.preproc.PreprocHCRTweets $*
+
+elif [ $CMD = 'per-tweet-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerTweetEvaluator $*
+
+elif [ $CMD = 'per-user-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerUserEvaluator $*
+
+elif [ $CMD = 'per-target-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerTargetEvaluator $*
+
+elif [ $CMD = 'train-maxent' ]; then
+
+     $SCALA_COMMAND updown.app.TrainMaxentModel $*
+
+elif [ $CMD = 'lex-ratio' ]; then
+
+     $SCALA_COMMAND updown.app.LexicalRatioClassifier $*
+
+elif [ $CMD = 'junto' ]; then
+
+     $SCALA_COMMAND updown.app.JuntoClassifier $*
+
+else  
+
+    CLASS=
+
+    case $CMD in
+	run) CLASS=$1; shift;;
+	help) help; exit 1;;
+	*) echo "Unrecognized command: $CMD"; help; exit 1;;
+    esac
+
+    $JAVA_COMMAND $CLASS $*
+
+fi
