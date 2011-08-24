@@ -38,11 +38,17 @@ object PerTweetEvaluator {
     var numAbstained = tweets.count(_.systemLabel == null)
 
     for(tweet <- tweets) {
-//      println(tweet.goldLabel.getClass.toString)
-      if(tweet.systemLabel == tweet.goldLabel.toString.trim) {
+      println(tweet.systemLabel + "|" + tweet.goldLabel)
+      /*
+       * val normedTweet = tweet.normalize("alpha")
+      *  val normedNormedTweet = normedTweet.normalize("int")
+      *  println(normedTweet.systemLabel + "|" + normedTweet.goldLabel + "\t" + normedNormedTweet.systemLabel + "|" + normedNormedTweet.goldLabel)
+      */
+      val normedTweet = tweet.normalize("alpha")
+      if(normedTweet.systemLabel == tweet.goldLabel) {
         correct += 1
       }
-//      else println(tweet.systemLabel + "|" + tweet.goldLabel)
+      
       total += 1
     }
 
@@ -75,40 +81,25 @@ object PerTweetEvaluator {
     val model = reader.getModel
 
     val labels = model.getDataStructures()(2).asInstanceOf[Array[String]]
-    val posIndex = labels.indexOf("1 ")
-    val negIndex = labels.indexOf("-1 ")
-    val neuIndex = labels.indexOf("0 ")
-    var test = (labels(0).toString == "0 " || labels(0).toString == "-1 " || labels(0).toString == "1 ") 
-    println(posIndex + " " + negIndex + " " + neuIndex)
-    println(labels(0) + " " + labels(1) + " " + labels(2))
-    println(test)
-//    for (i <- labels) println(i)
-
-    
+    val posIndex = labels.indexOf("1")
+    val negIndex = labels.indexOf("-1")
+    val neuIndex = labels.indexOf("0")
+        
     val goldLines = scala.io.Source.fromFile(goldInputFile.value.get,"utf-8").getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
     
     for(tweet <- tweets) {
-     //println(tweet.toString)
-      val result = model.eval(tweet.features.toArray)
-//      val classOfResult = result.getClass.toString      
-//      println("==========\nClass: "+ classOfResult + "\n==========") //tried to get at the type but failed
 
-      
+      val result = model.eval(tweet.features.toArray)
       val posProb = if(posIndex >= 0) result(posIndex) else 0.0
       val negProb = if(negIndex >= 0) result(negIndex) else 0.0
       val neuProb = if (negIndex >= 0) result(neuIndex) else 0.0
 
-//      println("posProb: "+posProb+"\t negProb: "+negProb+"\t neuProb: "+neuProb)
-//      println("resPos: "+result(posIndex)+"\t resNeg: "+result(negIndex)+"\t resNeu: "+result(neuIndex))
-      
 
-      if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = "1"//POS
-      else if(negProb >= posProb && negProb >= neuProb) tweet.systemLabel = "-1" //NEG
-      else if(neuProb >= posProb && neuProb >= negProb) tweet.systemLabel = "0" //NEU
-      
-//      println("tweet.systemLabel is... " + tweet.systemLabel)
+      if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = "1"
+      else if(negProb >= posProb && negProb >= neuProb) tweet.systemLabel = "-1" 
+      else if(neuProb >= posProb && neuProb >= negProb) tweet.systemLabel = "0"
 
     }
 

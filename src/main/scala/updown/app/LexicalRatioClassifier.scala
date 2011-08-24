@@ -43,7 +43,7 @@ object LexicalRatioClassifier {
     val tweets = TweetFeatureReader(goldInputFile.value.get)
     val lexicon = MPQALexicon(mpqaInputFile.value.get)
 
-    println("mpqa lex val for good: " + lexicon.peek("good"))    
+    //println("mpqa lex val for word 'good': " + lexicon.peek("good"))    
 
     var totTweets = 0
     var numAbstained = 0
@@ -64,17 +64,15 @@ object LexicalRatioClassifier {
         }
 
       }
-    
-      
-//      println(numPosWords + "\t" + numNeuWords + "\t" + numNegWords)
-      if (numPosWords == numNegWords && numNeuWords == 0) numAbstained += 1   //this happens a lot...and more than 1/3 are either POS or NEG so accuracy would actually be improved by a random assignment
-      else if(numPosWords == numNegWords && numNeuWords == numPosWords) tweet.systemLabel = "0"   // numAbstained += 1 could reasonably count as NEU, given relative low # of neutral entries
+
+      if (numPosWords == numNegWords && numNeuWords == 0) numAbstained += 1   //this happens a lot...and more than 1/3 are either POS or NEG so accuracy would actually be improved by a random assignment of either NEG or POS
+      else if(numPosWords == numNegWords && numNeuWords == numPosWords) tweet.systemLabel = "0"   //  could reasonably abstain on this
       else if (numPosWords == numNegWords && numNeuWords != 0) tweet.systemLabel = "0"   //Could reasonably abstain on this
       else if (numNeuWords > numPosWords && numNeuWords > numNegWords) tweet.systemLabel = "0"
       else if (numPosWords > numNegWords && numPosWords > numNeuWords) tweet.systemLabel = "1"
       else if (numNegWords  > numPosWords && numNegWords > numNeuWords) tweet.systemLabel = "-1"
-//      else println("whoops")
-//      println("tot abstained: " + numAbstained + " out of " + totTweets + " i.e. " + numAbstained.toFloat/totTweets.toFloat)
+
+      //println("tot abstained: " + numAbstained + " out of " + totTweets + " i.e. " + numAbstained.toFloat/totTweets.toFloat)
 
       totTweets +=1
     }
