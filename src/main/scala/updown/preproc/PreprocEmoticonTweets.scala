@@ -14,7 +14,7 @@ object PreprocEmoticonTweets {
   val NUM_NEG = "-1"
 
   def main(args: Array[String]) = {
-    val out = new BufferedWriter(new FileWriter(args(3)))
+    val out = new OutputStreamWriter(new FileOutputStream(args(3)),"UTF-8")
     val stoplist = scala.io.Source.fromFile(args(4),"utf-8").getLines.toSet
     val engDict = scala.io.Source.fromFile(args(5),"utf-8").getLines.toSet
     val countTopN = args.length >= 6
@@ -35,10 +35,20 @@ object PreprocEmoticonTweets {
     }
   }
 
-  def preprocFile(inFilename: String, label: String, out: BufferedWriter, stoplist: Set[String], engDict: Set[String], countTopN: Boolean) = {
+  def preprocFile(inFilename: String, label: String, out: OutputStreamWriter, stoplist: Set[String], engDict: Set[String], countTopN: Boolean) = {
     for(line <- scala.io.Source.fromFile(inFilename,"utf-8").getLines) {
       val tokens = BasicTokenizer(line)//TwokenizeWrapper(line)
       if(isEnglish(tokens, engDict)) {
+        val bigrams = StringUtil.generateBigrams(tokens)
+        
+        val unigrams = tokens.filterNot(stoplist(_))
+        if(countTopN) unigrams.foreach(u => topNUnigrams.put(u, topNUnigrams(u)+1))
+        val features = unigrams ::: bigrams
+
+        for(feature <- features) out.write(feature+",")
+        out.write(label+"\n")
+      }
+      if(isArabic(tokens, engDict)) {
         val bigrams = StringUtil.generateBigrams(tokens)
         
         val unigrams = tokens.filterNot(stoplist(_))
@@ -54,5 +64,9 @@ object PreprocEmoticonTweets {
   def isEnglish(tokens: List[String], engDict: Set[String]): Boolean = {
     val numEnglishTokens = tokens.count(t => t.length >= 2 && engDict(t))
     if(numEnglishTokens >= 2) true else false
+  }
+  def isArabic(tokens: List[String], araDict: Set[String]): Boolean = {
+    val numArabicTokens = tokens.count(t => t.length >= 1 && araDict(t))
+    if (numArabicTokens >= 1) true else false
   }
 }
