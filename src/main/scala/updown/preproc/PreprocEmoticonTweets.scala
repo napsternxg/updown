@@ -8,15 +8,20 @@ object PreprocEmoticonTweets {
   val topNUnigrams = new scala.collection.mutable.HashMap[String, Int] { override def default(s: String) = 0 }
   val TOP_N = 1000
   
+  // TODO: refactor this into a seperate enum
+  val NUM_POS = "1"
+  val NUM_NEU = "0"
+  val NUM_NEG = "-1"
+
   def main(args: Array[String]) = {
     val out = new BufferedWriter(new FileWriter(args(3)))
     val stoplist = scala.io.Source.fromFile(args(4),"utf-8").getLines.toSet
     val engDict = scala.io.Source.fromFile(args(5),"utf-8").getLines.toSet
     val countTopN = args.length >= 6
-    preprocFile(args(0), "1", out, stoplist, engDict, countTopN) //happy
-    preprocFile(args(1), "-1", out, stoplist, engDict, countTopN) //sad
+    preprocFile(args(0), NUM_POS, out, stoplist, engDict, countTopN) //happy
+    preprocFile(args(1), NUM_NEG, out, stoplist, engDict, countTopN) //sad
     //it seems i just need to add one little command here:
-    preprocFile(args(2), "0", out, stoplist, engDict, countTopN) //neutral
+    preprocFile(args(2), NUM_NEU, out, stoplist, engDict, countTopN) //neutral
     out.close
 
     if(countTopN) {
