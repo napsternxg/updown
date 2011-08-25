@@ -3,8 +3,11 @@ package updown.preproc
 import updown.util._
 import java.io._
 
-object PreprocEmoticonTweets {
+import org.clapper.argot._
 
+object PreprocEmoticonTweets {
+  import ArgotConverters._
+  
   val topNUnigrams = new scala.collection.mutable.HashMap[String, Int] { override def default(s: String) = 0 }
   val TOP_N = 1000
   
@@ -13,19 +16,59 @@ object PreprocEmoticonTweets {
   val NUM_NEU = "0"
   val NUM_NEG = "-1"
 
+  val parser = new ArgotParser("updown run updown.preproc.PreprocEmoticonTweets", preUsage=Some("Updown"))
+  val inputPositiveFile = parser.option[String](List("p","positive"),"positive", "text file with positive emoticons")
+  val inputNegativeFile = parser.option[String](List("n","negative"),"negative", "text file with negative emoticons")
+  val outputFile = parser.option[String](List("o","output"),"ouput", "feature file output")
+  val stopListFile = parser.option[String](List("l","stoplist"),"stoplist", "stoplist words")
+  val dictFile = parser.option[String](List("d","dictionary"),"dictionary", "a dictionary-this is actually just a list of words in the language")
+  val countArg = parser.option[String](List("c","count"),"count", "write top N words to this file")
+
   def main(args: Array[String]) = {
-    val out = new OutputStreamWriter(new FileOutputStream(args(3)),"UTF-8")
-    val stoplist = scala.io.Source.fromFile(args(4),"utf-8").getLines.toSet
-    val engDict = scala.io.Source.fromFile(args(5),"utf-8").getLines.toSet
-    val countTopN = args.length >= 6
-    preprocFile(args(0), NUM_POS, out, stoplist, engDict, countTopN) //happy
-    preprocFile(args(1), NUM_NEG, out, stoplist, engDict, countTopN) //sad
-    //it seems i just need to add one little command here:
-    preprocFile(args(2), NUM_NEU, out, stoplist, engDict, countTopN) //neutral
+    try{parser.parse(args)}
+    
+    catch { case e: ArgotUsageException => println(e.message); sys.exit(0) }
+        
+    if(inputPositiveFile.value == None){
+      println("You must specify a text file with happy looking emoticons via -p ")
+      sys.exit(0)
+    }
+    if(inputNegativeFile.value == None){
+      println("You must specify a text file with sad looking emoticons via -n ")
+      sys.exit(0)
+    }
+    
+    //TODO: if no output specified via -o write to stdout
+    if(outputFile.value == None){
+      println("You must specify an output file via -o ")
+      sys.exit(0)
+    }
+    if(stopListFile.value == None){
+      println("You must specify a a stoplist via -s ")
+      sys.exit(0)
+    }
+    if(dictFile.value == None){
+      println("You must specify a dictionary file via -d ")
+      sys.exit(0)
+    }
+ 
+    val out = new OutputStreamWriter(new FileOutputStream(outputFile.value.get),"UTF-8")
+    val stoplist = scala.io.Source.fromFile(stopListFile.value.get,"utf-8").getLines.toSet
+    val engDict = scala.io.Source.fromFile(dictFile.value.get,"utf-8").getLines.toSet
+    val countTopN = if(countArg.value == None) false else true
+    
+    preprocFile(inputPositiveFile.value.get, NUM_POS, out, stoplist, engDict, countTopN) //happy
+    preprocFile(inputNegativeFile.value.get, NUM_NEG, out, stoplist, engDict, countTopN) //sad
+    
+    /*
+     * 
+     *I have no idea what a neutral emoticon is
+     */
+    //preprocFile(args(2), NUM_NEU, out, stoplist, engDict, countTopN)
     out.close
 
     if(countTopN) {
-      val topNOut = new BufferedWriter(new FileWriter(args(6)))
+      val topNOut = new OutputStreamWriter(new FileOutputStream(countArg.value.get),"utf-8")
       
       val topNSorted = topNUnigrams.toList.filter(_._1.length >= 2).sortWith((x, y) => x._2 >= y._2).slice(0, TOP_N)
 

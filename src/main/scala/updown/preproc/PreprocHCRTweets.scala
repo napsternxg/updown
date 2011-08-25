@@ -5,7 +5,18 @@ import java.io._
 import au.com.bytecode.opencsv.CSVReader
 import scala.collection.immutable._
 
+import org.clapper.argot._
+
 object PreprocHCRTweets {
+  import ArgotConverters._
+  
+  val parser = new ArgotParser("updown run updown.preproc.PreprocHCRTweets", preUsage=Some("Updown"))
+  
+  val inputFile = parser.option[String](List("in","input"),"input", "csv input")
+  val stopListFile =  parser.option[String](List("s","stoplist"),"stoplist", "stoplist words")
+  val targetFile = parser.option[String](List("t","target"),"target","target file")
+  val featureFile = parser.option[String](List("f","feature"),"feature", "feature file")
+  
 
   val HCR_POS = "positive"
   val HCR_NEG = "negative"
@@ -17,10 +28,23 @@ object PreprocHCRTweets {
   val NUM_NEG = "-1"
 
   def main(args: Array[String]) {
-    val reader = new CSVReader(new InputStreamReader(new FileInputStream(new File(args(0))), "UTF-8"))
-    val stoplist = scala.io.Source.fromFile(args(1), "utf-8").getLines.toSet
-    val targetWriter = if(args.length >= 3) new OutputStreamWriter(new FileOutputStream(new File(args(2))),"UTF-8") else null
-    val featureWriter = if(args.length >= 4 ) new OutputStreamWriter(new FileOutputStream(new File(args(3))),"UTF-8") else null
+    try{parser.parse(args)}
+    catch { case e: ArgotUsageException => println(e.message); sys.exit(0) }
+    
+    if(inputFile.value == None){
+      println("You must specify a input data file via --in or --input ")
+      sys.exit(0)
+    }
+    if(stopListFile.value == None){
+      println("You must specify a stoplist file via -s ")
+      sys.exit(0)
+    }
+      
+
+    val reader = new CSVReader(new InputStreamReader(new FileInputStream(new File(inputFile.value.get)), "UTF-8"))
+    val stoplist = scala.io.Source.fromFile(stopListFile.value.get, "utf-8").getLines.toSet 
+    val targetWriter = if(targetFile.value != None) new OutputStreamWriter(new FileOutputStream(new File(targetFile.value.get)),"UTF-8") else null
+    val featureWriter = if(featureFile.value!= None) new OutputStreamWriter(new FileOutputStream(new File(featureFile.value.get)),"UTF-8") else null
 
 
     var numTweets = 0
@@ -50,7 +74,7 @@ object PreprocHCRTweets {
 	  }
 	  catch{case _ => noUserName += 1; username ="NONE"}
 	  try{
-          tweet = fields(3).trim
+            tweet = fields(3).trim
 	  }
 	  catch{case _ => noTweet += 1}
 	  try{
@@ -58,7 +82,7 @@ object PreprocHCRTweets {
 	  }
 	  catch{case _ => sentiment1 = "NONE";noSentiment += 1}
 	  try{
-	  target1 = fields(5).trim
+	    target1 = fields(5).trim
 	  }
 	  catch{case _ => target1 ="NONE"; noTarget += 1}
 	 
