@@ -38,7 +38,4 @@ class MyTest1 extends FlatSpec {
     assert(1 === 1)
   }
 
-  it should "fail on this test" in {
-    assert(1 === 2)
-  }
 }
