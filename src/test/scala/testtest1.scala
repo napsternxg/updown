@@ -37,4 +37,8 @@ class MyTest1 extends FlatSpec {
   "1" should "equal 1" in {
     assert(1 === 1)
   }
+
+  it should "fail on this test" in {
+    assert(1 === 2)
+  }
 }
