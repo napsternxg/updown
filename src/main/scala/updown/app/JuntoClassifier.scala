@@ -52,7 +52,7 @@ object JuntoClassifier {
 
   val nodeRE = """^(.+_)(.+)$""".r
 
-  var refCorpusNgramProbs: scala.collection.mutable.HashMap[String, Double] = null
+  var refCorpusNgramProbs: ProbabilityLexicon/*scala.collection.mutable.HashMap[String, Double]*/ = null
   var thisCorpusNgramProbs: scala.collection.mutable.HashMap[String, Double] = null
 
   var wordCount = 0
@@ -288,13 +288,14 @@ object JuntoClassifier {
       }).toList.flatten
   }
 
-  def loadRefCorpusNgramProbs(filename: String): scala.collection.mutable.HashMap[String, Double] = {
+  def loadRefCorpusNgramProbs(filename: String): ProbabilityLexicon/*scala.collection.mutable.HashMap[String, Double]*/ = {
     val gis = new GZIPInputStream(new FileInputStream(filename))
     val ois = new ObjectInputStream(gis)
     val refProbs = ois.readObject()
 
     refProbs match {
-      case refProbsHM: scala.collection.mutable.HashMap[String, Double] => refProbsHM
+      //case refProbsHM: scala.collection.mutable.HashMap[String, Double] => refProbsHM
+      case refProbLex: ProbabilityLexicon => refProbLex
       case _ => throw new ClassCastException
     }
   }
@@ -321,7 +322,7 @@ object JuntoClassifier {
       return 1.0
     else {
       val numerator = thisCorpusNgramProbs(ngram)
-      val denominator = refCorpusNgramProbs(ngram)
+      val denominator = refCorpusNgramProbs.getNgramProb(ngram)
 
       if (denominator == 0.0) //ngram not found in reference corpus; assume NOT relevant to this corpus
         return 0.0
