@@ -102,6 +102,7 @@ object JuntoClassifier {
     val edgeSeedSet = edgeSeedSetOption.value.getOrElse(DEFAULT_EDGE_SEED_SET)
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
+    //tweets.foreach(println)
 
     if (refCorpusProbsFile.value != None) {
       refCorpusNgramProbs = loadRefCorpusNgramProbs(refCorpusProbsFile.value.get)
@@ -323,6 +324,7 @@ object JuntoClassifier {
     else {
       val numerator = thisCorpusNgramProbs(ngram)
       val denominator = refCorpusNgramProbs.getNgramProb(ngram)
+      //println(ngram+" "+denominator)
 
       if (denominator == 0.0) //ngram not found in reference corpus; assume NOT relevant to this corpus
         return 0.0

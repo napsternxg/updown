@@ -9,7 +9,7 @@ import updown.util._
 
 object NgramProbabilityCalculator {
 
-  val COUNT_THRESHOLD = 5.0
+  val COUNT_THRESHOLD = 10
   //val underThresholdProbs = new scala.collection.mutable.HashMap[String, Double] { override def default(s: String) = 0.0 }
   //val ngramProbabilities = new scala.collection.mutable.HashMap[String, Double] { override def default(s: String) = 0.0 }
   val probLex = new ProbabilityLexicon
@@ -34,7 +34,10 @@ object NgramProbabilityCalculator {
 
     //ngramProbabilities/*Pruned*/.foreach(p => ngramProbabilities/*Pruned*/.put(p._1, p._2 / wordCount))
 
-    println("Final word count was " + probLex.size)
+    println("Words:"+probLex.totalUnigramCount+", vocab:"+probLex.vocabSize)
+    println("Removing words under threshold of "+COUNT_THRESHOLD)
+    probLex.removeUnderThreshold(COUNT_THRESHOLD)
+    println("Words:"+probLex.totalUnigramCount+", vocab:"+probLex.vocabSize)
 
     /*println(ngramProbabilities("lol"))
     println(ngramProbabilities("the"))
@@ -59,7 +62,7 @@ object NgramProbabilityCalculator {
   }
 
   def processFile(file: File): Unit = {
-    println(file)
+    println(file+" tweets: "+tweetCount+" words:"+probLex.totalUnigramCount+" vocab:"+probLex.vocabSize)
     
     val fileInputStream = new FileInputStream(file)
     fileInputStream.read(); // otherwise null pointer
