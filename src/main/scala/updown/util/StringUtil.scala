@@ -39,13 +39,4 @@ object StringUtil {
     val innerBigrams = if(unigrams.length >= 2) unigrams.sliding(2).map(bi => bi(0)+" "+bi(1)).toList else Nil
     ("$ "+unigrams(0) :: innerBigrams) ::: (unigrams(unigrams.length-1)+" $" :: Nil)
   }
-
-  // john hates this function, but doesn't know what to do about them just yet
-  def getLongNoExcept(s: String): String = {
-    try {
-      s.toLong
-    } catch {
-      case _ => null
-    }
-  }
 }
