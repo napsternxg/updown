@@ -10,10 +10,12 @@ import updown.util._
 object NgramProbabilityCalculator {
 
   val COUNT_THRESHOLD = 5.0
-  val ngramProbabilities = new scala.collection.mutable.HashMap[String, Double] { override def default(s: String) = 0.0 }
+  //val underThresholdProbs = new scala.collection.mutable.HashMap[String, Double] { override def default(s: String) = 0.0 }
+  //val ngramProbabilities = new scala.collection.mutable.HashMap[String, Double] { override def default(s: String) = 0.0 }
+  val probLex = new ProbabilityLexicon
   var tweetCount = 0
   var tweetsToProcess = 1000
-  var wordCount = 0
+  //var wordCount = 0
 
   def main(args: Array[String]) = {
     val inFile = new File(args(0))
@@ -26,13 +28,13 @@ object NgramProbabilityCalculator {
       processFile(inFile)
     }
 
-    ngramProbabilities.foreach(p => if(p._2 < COUNT_THRESHOLD) ngramProbabilities.remove(p._1))
+    //ngramProbabilities.foreach(p => if(p._2 < COUNT_THRESHOLD) ngramProbabilities.remove(p._1))
     
     //val ngramProbabilitiesPruned = ngramProbabilities.filter(_._2 >= COUNT_THRESHOLD)
 
-    ngramProbabilities/*Pruned*/.foreach(p => ngramProbabilities/*Pruned*/.put(p._1, p._2 / wordCount))
+    //ngramProbabilities/*Pruned*/.foreach(p => ngramProbabilities/*Pruned*/.put(p._1, p._2 / wordCount))
 
-    println("Final word count was " + wordCount)
+    println("Final word count was " + probLex.size)
 
     /*println(ngramProbabilities("lol"))
     println(ngramProbabilities("the"))
@@ -42,7 +44,7 @@ object NgramProbabilityCalculator {
     print("Serializing to " + args(1) + " ...");
     val gos = new GZIPOutputStream(new FileOutputStream(args(1)))
     val oos = new ObjectOutputStream(gos)
-    oos.writeObject(ngramProbabilities/*Pruned*/)
+    oos.writeObject(probLex/*ngramProbabilities/*Pruned*/*/)
     oos.close()
     println("done.")
   }
@@ -79,7 +81,7 @@ object NgramProbabilityCalculator {
         val tokens = tweet.split(" ")
         if(tokens.length >= 1) {
           val unigrams = tokens.map(StringUtil.preprocessKeepHash(_)).toList
-          wordCount += unigrams.length
+          //wordCount += unigrams.length
           val bigramsFromUnigrams =
             if(unigrams.length >= 2)
               unigrams.sliding(2).map(bi => bi(0)+" "+bi(1)).toList
@@ -89,7 +91,7 @@ object NgramProbabilityCalculator {
 
           for(ngram <- unigrams ::: bigrams) {
             //println("adding: " + ngram)
-            ngramProbabilities.put(ngram, ngramProbabilities(ngram) + 1.0)
+            probLex.observeNgram(ngram)
           }
         }
 
