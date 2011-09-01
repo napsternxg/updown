@@ -75,7 +75,7 @@ if [ $CMD = 'build' ]; then
 
 elif [ $CMD = 'scct' ]; then
 
-    $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar test-coverage "$@"
+    $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar clean test-coverage "$@"
     firefox $UPDOWN_DIR/target/coverage-report/index.html
 
 elif [ $CMD = 'preproc-stanford' ]; then

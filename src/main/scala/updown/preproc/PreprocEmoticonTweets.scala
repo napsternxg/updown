@@ -4,17 +4,13 @@ import updown.util._
 import java.io._
 
 import org.clapper.argot._
+import updown.data.SentimentLabel
 
 object PreprocEmoticonTweets {
   import ArgotConverters._
   
   val topNUnigrams = new scala.collection.mutable.HashMap[String, Int] { override def default(s: String) = 0 }
   val TOP_N = 1000
-  
-  // TODO: refactor this into a seperate enum
-  val NUM_POS = "1"
-  val NUM_NEU = "0"
-  val NUM_NEG = "-1"
 
   val parser = new ArgotParser("updown run updown.preproc.PreprocEmoticonTweets", preUsage=Some("Updown"))
   val inputPositiveFile = parser.option[String](List("p","positive"),"positive", "text file with positive emoticons")
@@ -57,14 +53,14 @@ object PreprocEmoticonTweets {
     val engDict = scala.io.Source.fromFile(dictFile.value.get,"utf-8").getLines.toSet
     val countTopN = if(countArg.value == None) false else true
     
-    preprocFile(inputPositiveFile.value.get, NUM_POS, out, stoplist, engDict, countTopN) //happy
-    preprocFile(inputNegativeFile.value.get, NUM_NEG, out, stoplist, engDict, countTopN) //sad
+    preprocFile(inputPositiveFile.value.get, SentimentLabel.Positive, out, stoplist, engDict, countTopN) //happy
+    preprocFile(inputNegativeFile.value.get, SentimentLabel.Negative, out, stoplist, engDict, countTopN) //sad
     
     /*
      * 
      *I have no idea what a neutral emoticon is
      */
-    //preprocFile(args(2), NUM_NEU, out, stoplist, engDict, countTopN)
+    //preprocFile(args(2), SentimentLabel.Neutral, out, stoplist, engDict, countTopN)
     out.close
 
     if(countTopN) {
@@ -78,7 +74,7 @@ object PreprocEmoticonTweets {
     }
   }
 
-  def preprocFile(inFilename: String, label: String, out: OutputStreamWriter, stoplist: Set[String], engDict: Set[String], countTopN: Boolean) = {
+  def preprocFile(inFilename: String, label: SentimentLabel.Type, out: OutputStreamWriter, stoplist: Set[String], engDict: Set[String], countTopN: Boolean) = {
     for(line <- scala.io.Source.fromFile(inFilename,"utf-8").getLines) {
       val tokens = BasicTokenizer(line)//TwokenizeWrapper(line)
       if(isEnglish(tokens, engDict)) {
