@@ -5,6 +5,8 @@ object SentimentLabel extends Enumeration{
   val Positive = Value("1")
   val Neutral = Value("0")
   val Negative = Value("-1")
+  // this is the end of the enum definition. the rest of this object just demonstrates other
+  //  stuff you can do.
 
   private val _POS_NAME = "positive"
   private val _NEG_NAME = "negative"
