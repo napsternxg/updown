@@ -17,7 +17,7 @@
  tokenized Array[String] of the input text Twokenize.tokenize("foobar
  baz.") => ['foobar', 'baz', '.']
 
- The main method reads from stdin like it's python counterpart and
+ The main method reads from stdin like its python counterpart and
  calls the above method on each line
 
   > scalac twokenize.scala
