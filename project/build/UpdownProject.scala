@@ -1,6 +1,7 @@
 import sbt._
+import reaktor.scct.ScctProject
 
-class UpdownProject (info: ProjectInfo) extends DefaultProject(info) /*with assembly.AssemblyBuilder*/ {
+class UpdownProject (info: ProjectInfo) extends DefaultProject(info)  with ScctProject/*with assembly.AssemblyBuilder*/ {
   override def disableCrossPaths = true 
 
   // Add repositories
@@ -10,7 +11,7 @@ class UpdownProject (info: ProjectInfo) extends DefaultProject(info) /*with asse
   // Dependencies
   val opennlpTools = "org.apache.opennlp" % "opennlp-tools" % "1.5.1-incubating"
   val opennlpMaxent = "org.apache.opennlp" % "opennlp-maxent" % "3.0.1-incubating"
-  val argot = "org.clapper" %% "argot" % "0.3.1"
+  val argot = "org.clapper" %% "argot" % "0.3.5"
   val scalatest = "org.scalatest" % "scalatest_2.9.0" % "1.6.1"
 }
 
