@@ -1,6 +1,6 @@
 import org.scalatest.FlatSpec
 import updown.data.SentimentLabel
-import updown.preproc.{SuccessfulParse, PreprocStanfordTweets}
+import updown.preproc.{SuccessfulStanfordParse, PreprocStanfordTweets}
 
 class PreprocStanfordTest extends FlatSpec {
   val STANFORD_INPUT_LINE = "4;;3;;Mon May 11 03:17:40 UTC 2009;;kindle2;;tpryan;;@stellargirl I loooooooovvvvvveee my Kindle2. Not that the DX is cool, but the 2 is fantastic in its own right."
@@ -26,7 +26,7 @@ class PreprocStanfordTest extends FlatSpec {
     assert(
       pst.processOneLine(STANFORD_INPUT_LINE, Set())
         ===
-        SuccessfulParse(
+        SuccessfulStanfordParse(
           STANFORD_TWEET_ID,
           STANFORD_USERNAME,
           STANFORD_SENTIMENT_GOLD,
