@@ -73,6 +73,11 @@ if [ $CMD = 'build' ]; then
 
     $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
 
+elif [ $CMD = 'scct' ]; then
+
+    $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar test-coverage "$@"
+    firefox $UPDOWN_DIR/target/coverage-report/index.html
+
 elif [ $CMD = 'preproc-stanford' ]; then
 
      $SCALA_COMMAND updown.preproc.PreprocStanfordTweets $*
