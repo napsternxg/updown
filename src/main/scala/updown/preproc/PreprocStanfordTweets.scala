@@ -1,13 +1,12 @@
 package updown.preproc
 
+import model.TweetParse
 import updown.util._
 
 import org.clapper.argot._
 import updown.data.SentimentLabel
 
-abstract class TweetParse
-
-case class SuccessfulParse(tweetid: String, username: String, label: SentimentLabel.Type, features: Iterable[String]) extends TweetParse
+case class SuccessfulStanfordParse(tweetid: String, username: String, label: SentimentLabel.Type, features: Iterable[String]) extends TweetParse
 
 object PreprocStanfordTweets {
   //IDEA will try to remove this import, but it is not unused. Make sure it stays here.
@@ -22,21 +21,18 @@ object PreprocStanfordTweets {
   val lineRE = """^(\d+);;(\d+);;[^;]+;;[^;]+;;([^;]+);;(.*)$""".r
 
   // TODO: verify the meanings of these values
-  object StanfordLabel extends Enumeration {
-    val Positive = Value("4")
-    val Neutral = Value("2")
-    val Negative = Value("0")
-  }
+  val STAN_POS = "4"
+  val STAN_NEU = "2"
+  val STAN_NEG = "0"
 
   def processOneLine(line: String, stoplist: Set[String]): Any = {
     val lineRE(sentimentRaw, tweetid, username, tweet) = line
-    val sentiment = StanfordLabel.withName(sentimentRaw)
-    if (sentiment == StanfordLabel.Positive || sentiment == StanfordLabel.Negative) {
-      val tokens = BasicTokenizer(tweet) //TwokenizeWrapper(tweet)
+    if (sentimentRaw == STAN_POS || sentimentRaw == STAN_NEG) {
+      val tokens = BasicTokenizer(tweet)
       val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
-      val label = if (sentiment == StanfordLabel.Positive) SentimentLabel.Positive else SentimentLabel.Negative
+      val label = if (sentimentRaw == STAN_POS) SentimentLabel.Positive else SentimentLabel.Negative
 
-      SuccessfulParse(tweetid, username, label, features)
+      SuccessfulStanfordParse(tweetid, username, label, features)
     }
   }
 
@@ -64,7 +60,7 @@ object PreprocStanfordTweets {
     var numPos = 0
     for (line <- lines) {
       processOneLine(line, stoplist) match {
-        case SuccessfulParse(tweetid, username, label, features) =>
+        case SuccessfulStanfordParse(tweetid, username, label, features) =>
           numTweets += 1
           if (label == SentimentLabel.Positive)
             numPos += 1

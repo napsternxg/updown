@@ -1,8 +1,12 @@
 package updown.preproc
 
+import model.TweetParse
 import updown.util._
 
 import org.clapper.argot._
+import updown.data.SentimentLabel
+
+case class SuccessfulShammaParse(tweetid: String, username: String, label: SentimentLabel.Type, iaa: Double, features: Iterable[String]) extends TweetParse
 
 object PreprocShammaTweets {
   import ArgotConverters._
@@ -20,10 +24,31 @@ object PreprocShammaTweets {
   val SHAMMA_MIXED = "3"
   val SHAMMA_OTHER = "4"
 
-  // TODO: refactor this into a seperate enum
-  val NUM_POS = "1"
-  val NUM_NEU = "0"
-  val NUM_NEG = "-1"
+  def processOneLine(line: String, stoplist: Set[String]): Any = {
+    val roughTokens = line.split("\t")
+
+    if (!line.startsWith("#") && roughTokens.length >= 8 && line.length > 0 && Character.isDigit(line(0))) {
+      val lineRE(tweetid, tweet, username, ratingsRaw) = line
+      val ratings = ratingRE.findAllIn(ratingsRaw).toList
+
+      // we only consider tweets that were evaluated by 3 or more annotators
+      if (ratings.length >= 3) {
+        val numPos = ratings.count(_ == SHAMMA_POS)
+        val numNeg = ratings.count(_ == SHAMMA_NEG)
+        val posFraction = numPos.toFloat / ratings.length
+        val negFraction = numNeg.toFloat / ratings.length
+        val majorityFraction = math.max(posFraction, negFraction)
+        //only consider non-tie classifications
+        if (majorityFraction > .5) {
+          val label = if (posFraction > negFraction) SentimentLabel.Positive else SentimentLabel.Negative
+          val tokens = BasicTokenizer(tweet)
+          val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
+
+          SuccessfulShammaParse(tweetid, username, label, majorityFraction, features)
+        }
+      }
+    }
+  }
 
   def main(args: Array[String]) {
     try{parser.parse(args)}
@@ -46,35 +71,13 @@ object PreprocShammaTweets {
     var averageIAA = 0.0
     for (line <- lines) {
 
-      val roughTokens = line.split("\t")
-
-      if (!line.startsWith("#") && roughTokens.length >= 8 && line.length > 0 && Character.isDigit(line(0))) {
-        val lineRE(tweetid, tweet, username, ratingsRaw) = line
-        val ratings = ratingRE.findAllIn(ratingsRaw).toList
-
-        if (ratings.length >= 3) {
-          val numPos = ratings.count(_ == SHAMMA_POS)
-          val numNeg = ratings.count(_ == SHAMMA_NEG)
-          val posFraction = numPos.toFloat / ratings.length
-          val negFraction = numNeg.toFloat / ratings.length
-          //println(ratings.length)
-          //println("posFraction: " + posFraction)
-          //println("negFraction: " + negFraction)
-          val majorityFraction = math.max(posFraction, negFraction)
-          if (majorityFraction > .5) {
-            val label = if (posFraction > negFraction) NUM_POS else NUM_NEG
-            if (label == NUM_POS) numPosTweets += 1
-            numTweets += 1
-            averageIAA += majorityFraction
-
-            val tokens = BasicTokenizer(tweet) //TwokenizeWrapper(tweet)
-            val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
-
-            print(tweetid + "|" + username + "|")
-            for (feature <- features) print(feature + ",")
-            println(label)
-          }
-        }
+      processOneLine(line, stoplist) match {
+        case SuccessfulShammaParse(tweetid, username, label, iaa, features) =>
+          numTweets += 1
+          averageIAA += iaa
+          if (label == SentimentLabel.Positive) numPosTweets += 1
+          printf("%s|%s|%s,%s\n", tweetid, username, features.mkString(","), label.toString)
+        case _ => ()
       }
     }
 
