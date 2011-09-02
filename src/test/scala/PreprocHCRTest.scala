@@ -17,13 +17,13 @@ class PreprocHCRTest extends FlatSpec {
 
   "processOneLine" should "produce expected output" in {
     assert(
-      pst.processOneLine(HCR_INPUT_FIELDS, Set("for", "you", "mr"))
+      pst.processOneLine(9, HCR_INPUT_FIELDS, Set("for", "you", "mr"))
         ===
         SuccessfulHCRParse(
           HCR_TWEET_ID,
           HCR_USERNAME,
-          HCR_SENTIMENT_GOLD,
-          HCR_TARGET,
+          List((HCR_SENTIMENT_GOLD,
+          HCR_TARGET)),
           HCR_FEATURES))
   }
 
