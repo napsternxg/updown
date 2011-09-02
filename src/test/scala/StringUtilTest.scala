@@ -3,7 +3,7 @@ import updown.util.StringUtil
 
 class StringUtilTest extends FlatSpec {
   "stripPunc" should "turn /.,@$#asdf';.@#$% into asdf" in {
-    assert(StringUtil.stripPunc("/.,@$#asdf';.@#$%") === "asdf")
+    assert(StringUtil.stripPunc("/.,@$#ASdf';.@#$%") === "ASdf")
   }
   "preprocess" should "turn /.,@$#ASdf';.@#$% into asdf" in {
     assert(StringUtil.preprocess("/.,@$#ASdf';.@#$%") === "asdf")
