@@ -53,9 +53,9 @@ Updown 0.1 commands:
             -m path/to/some/model
             [-t path/to/output/target/file.txt ]
 
-  per-user-eval         compute user postivity ratio (?)
+  per-user-eval         compute user postivity ratio
 
-  per-target-eval       compute targe accuracy
+  per-target-eval       compute target accuracy
 
   lex-ratio             compare gold labels and system labels using sentiment lexicon (e.g. MPQA)
     command -g path/to/gold/labeled/tweets.txt
