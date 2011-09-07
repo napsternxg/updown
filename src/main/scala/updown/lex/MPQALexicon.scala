@@ -1,5 +1,7 @@
 package updown.lex
 
+import collection.mutable.HashMap
+
 class MPQALexicon(entries: scala.collection.mutable.HashMap[String, MPQAEntry]) {
   def apply(s: String) = entries(s)
 
@@ -25,29 +27,32 @@ object MPQALexicon {
   val polarityRE = """mpqapolarity=(neutral)|(neg)|(pos)$""".r
   val subjectivityRE = """mpqapolarity=(strong)|(weak)$""".r
 
+  def parseLine(line: String, entries: HashMap[String, MPQAEntry]): Any = {
+    //whoa! interesting line of code. but causes runtime match error. shouldn't we be passing character seq and not strings?..
+    //val mpqaLineRE(word, subjectivity, polarity) = line
+    //entries.put(word, new MPQAEntry(word, polarity.toUpperCase, subjectivity))
+    val wordOption = wordRE.findFirstIn(line)
+    val polarityOption = polarityRE.findFirstIn(line)
+    val subjectivityOption = subjectivityRE.findFirstIn(line)
+
+    if (wordOption != None && polarityOption != None && subjectivityOption != None) {
+      val word = wordOption.get.substring(6)
+      val polarity = polarityOption.get.toUpperCase
+      val subjectivity = subjectivityOption.get.split("=").last
+
+      entries.put(word, new MPQAEntry(word, polarity, subjectivity))
+    }
+  }
+
   def apply(filename: String) = {
-    val entries = new scala.collection.mutable.HashMap[String, MPQAEntry]
+    val entries = new HashMap[String, MPQAEntry]
 
     for (line <- scala.io.Source.fromFile(filename, "utf-8").getLines) {
       try {
-        //whoa! interesting line of code. but causes runtime match error. shouldn't we be passing character seq and not strings?..
-        //val mpqaLineRE(word, subjectivity, polarity) = line
-        //entries.put(word, new MPQAEntry(word, polarity.toUpperCase, subjectivity))
-        var wordOption = wordRE.findFirstIn(line)
-        var polarityOption = polarityRE.findFirstIn(line)
-        var subjectivityOption = subjectivityRE.findFirstIn(line)
-
-        if (wordOption != None && polarityOption != None && subjectivityOption != None) {
-          val word = wordOption.get.substring(6)
-          val polarity = polarityOption.get.toUpperCase
-          val subjectivity = subjectivityOption.get.split("=").last
-
-          entries.put(word, new MPQAEntry(word, polarity, subjectivity))
-
-        }
+        parseLine(line, entries)
       }
       catch {
-        case e: MatchError => println("a match error")
+        case e: MatchError => println("malformed line: " + line)
       }
     }
 
@@ -67,5 +72,16 @@ class MPQAEntry(val word: String, val polarity: String, val subjectivity: String
 
   override def toString = {
     word + ": " + polarity + ", " + subjectivity
+  }
+
+  override def equals(right: Any):Boolean = {
+    if (right != null && right.isInstanceOf[MPQAEntry]){
+      val rightEntry = right.asInstanceOf[MPQAEntry]
+      (this.word == rightEntry.word) &&
+      (this.polarity == rightEntry .polarity) &&
+      (this.subjectivity == rightEntry.subjectivity)
+    } else {
+      false
+    }
   }
 }
