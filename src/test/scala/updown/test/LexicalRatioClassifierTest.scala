@@ -1,3 +1,5 @@
+package updown.test
+
 import collection.mutable.HashMap
 import org.scalatest.FlatSpec
 import updown.app.LexicalRatioClassifier

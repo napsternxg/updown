@@ -50,8 +50,12 @@ object PerTargetEvaluator {
 
     for (tweet <- tweets) {
       //val prevList = targetsToTweets(tweet.userid)
-      val curTarget = targets(tweet.id)
-      targetsToTweets.put(curTarget, tweet :: targetsToTweets(curTarget))
+      if (targets.contains(tweet.id)){
+        val curTarget = targets(tweet.id)
+        targetsToTweets.put(curTarget, tweet :: targetsToTweets(curTarget))
+      } else {
+        System.err.println("missing target for "+tweet.id)
+      }
     }
 
     //targetsToTweets.foreach(p => println(p._1+"   "+p._2.length))

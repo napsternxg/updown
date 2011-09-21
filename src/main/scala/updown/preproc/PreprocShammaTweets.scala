@@ -76,7 +76,7 @@ object PreprocShammaTweets {
           numTweets += 1
           averageIAA += iaa
           if (label == SentimentLabel.Positive) numPosTweets += 1
-          printf("%s|%s|%s,%s\n", tweetid, username, features.mkString(","), label.toString)
+          printf("%s|%s|%s|%s\n", tweetid, username, features.mkString(",").replace("|", ""), label.toString)
         case _ => ()
       }
     }

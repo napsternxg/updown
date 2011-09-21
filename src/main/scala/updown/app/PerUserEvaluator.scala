@@ -139,9 +139,9 @@ object PerUserEvaluator {
     for (tweet <- tweets) {
       val result = model.eval(tweet.features.toArray)
 
-      val posProb = result(posIndex) //result(0)
-      val negProb = result(negIndex) //result(2)
-      val neuProb = result(neuIndex) //result(1)
+      val posProb = if(posIndex >= 0) result(posIndex) else 0.0
+      val negProb = if(negIndex >= 0) result(negIndex) else 0.0
+      val neuProb = if (neuIndex >= 0) result(neuIndex) else 0.0
       if (posProb >= negProb && posProb >= neuProb) tweet.systemLabel = POS
       else if (negProb > posProb && negProb > neuProb) tweet.systemLabel = NEG
       else if (neuProb > posProb && neuProb > negProb) tweet.systemLabel == NEU

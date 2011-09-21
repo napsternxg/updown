@@ -240,11 +240,17 @@ object JuntoClassifier {
     val reader = new BinaryGISModelReader(dataInputStream)
     val model = reader.getModel
 
+    val labels = model.getDataStructures()(2).asInstanceOf[Array[String]]
+    val posIndex = labels.indexOf("1")
+    val negIndex = labels.indexOf("-1")
+    val neuIndex = labels.indexOf("0")
+
     (for (tweet <- tweets) yield {
       val result = model.eval(tweet.features.toArray)
-      val posProb = result(0)
-      val negProb = result(2) //oughta be able to get with index thingy as was done in PerTweetEvaluator
-      val neuProb = result(1)
+
+      val posProb = if(posIndex >= 0) result(posIndex) else 0.0
+      val negProb = if(negIndex >= 0) result(negIndex) else 0.0
+      val neuProb = if (neuIndex >= 0) result(neuIndex) else 0.0
 
       //println(TWEET_ + tweet.id + "   " + POS + "   " + posProb)
       //println(TWEET_ + tweet.id + "   " + NEG + "   " + negProb)
