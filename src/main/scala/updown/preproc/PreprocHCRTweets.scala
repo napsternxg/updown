@@ -100,7 +100,7 @@ object PreprocHCRTweets {
       label += (if (label != "") "," else "") + sentiment
       target += (if (target != "") "," else "") + targetString
     }
-    featureWriter.write("%s|%s|%s,%s\n".format(tweetid, username, features.mkString(","), label))
+    featureWriter.write("%s|%s|%s|%s\n".format(tweetid, username, features.mkString(",").replace("|", ""), label))
     targetWriter.write("%s|%s\n".format(tweetid, target))
   }
 

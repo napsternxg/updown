@@ -1,3 +1,5 @@
+package updown.test
+
 import org.scalatest.FlatSpec
 import updown.data.SentimentLabel
 import updown.preproc.{SuccessfulShammaParse, PreprocShammaTweets}

@@ -1,3 +1,5 @@
+package updown.test
+
 import org.scalatest.FlatSpec
 import updown.util.Twokenize
 

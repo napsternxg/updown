@@ -1,9 +1,11 @@
+package updown.test
+
 import org.scalatest.FlatSpec
 import updown.data.io.TweetFeatureReader
 import updown.data.Tweet
 
 class TweetFeatureReaderTest extends FlatSpec {
-  val line = "3|tpryan|stellargirl,loooooooovvvvvveee,kindle2,dx,cool,2,fantastic,$ stellargirl,stellargirl i,i loooooooovvvvvveee,loooooooovvvvvveee my,my kindle2,kindle2 not,not that,that the,the dx,dx is,is cool,cool but,but the,the 2,2 is,is fantastic,fantastic in,in its,its own,own right,right $,1"
+  val line = "3|tpryan|stellargirl,loooooooovvvvvveee,kindle2,dx,cool,2,fantastic,$ stellargirl,stellargirl i,i loooooooovvvvvveee,loooooooovvvvvveee my,my kindle2,kindle2 not,not that,that the,the dx,dx is,is cool,cool but,but the,the 2,2 is,is fantastic,fantastic in,in its,its own,own right,right $|1"
   val features = List("stellargirl", "loooooooovvvvvveee", "kindle2", "dx", "cool", "2", "fantastic", "$ stellargirl", "stellargirl i", "i loooooooovvvvvveee", "loooooooovvvvvveee my", "my kindle2", "kindle2 not", "not that", "that the", "the dx", "dx is", "is cool", "cool but", "but the", "the 2", "2 is", "is fantastic", "fantastic in", "in its", "its own", "own right", "right $");
 
   "featureRowRE" should "work" in {

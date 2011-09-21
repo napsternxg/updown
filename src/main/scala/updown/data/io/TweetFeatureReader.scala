@@ -3,7 +3,7 @@ package updown.data.io
 import updown.data._
 
 object TweetFeatureReader {
-  val featureRowRE = """^([^|]+)\|([^|]+)\|(.*),([^,]+)$""".r //python verbose regexes are so much nicer :/
+  val featureRowRE = """^([^|]*)\|([^|]*)\|([^|]*)\|(.*)$""".r //python verbose regexes are so much nicer :/
 
   def apply(inputFile: String): List[Tweet] = {
 

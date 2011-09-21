@@ -28,4 +28,12 @@ object SentimentLabel extends Enumeration{
       case `_NEU_NAME` => Neutral
     }
   }
+
+  def figureItOut(name:String) = {
+    name.toLowerCase match {
+      case "positive"|"pos"|"p"|"+"|"1" => Positive
+      case "negative"|"neg"|"-"|"-1" => Negative
+      case "neutral"|"neu"|"neut"|"0" => Neutral
+    }
+  }
 }

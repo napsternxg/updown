@@ -101,7 +101,7 @@ object PerTweetEvaluator {
       val result = model.eval(tweet.features.toArray)
       val posProb = if(posIndex >= 0) result(posIndex) else 0.0
       val negProb = if(negIndex >= 0) result(negIndex) else 0.0
-      val neuProb = if (negIndex >= 0) result(neuIndex) else 0.0
+      val neuProb = if (neuIndex >= 0) result(neuIndex) else 0.0
 
 
       if(posProb >= negProb && posProb >= neuProb) tweet.systemLabel = "1"

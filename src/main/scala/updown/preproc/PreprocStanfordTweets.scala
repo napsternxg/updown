@@ -64,7 +64,7 @@ object PreprocStanfordTweets {
           numTweets += 1
           if (label == SentimentLabel.Positive)
             numPos += 1
-          printf("%s|%s|%s,%s\n", tweetid, username, features.mkString(","), label.toString)
+          printf("%s|%s|%s|%s\n", tweetid, username, features.mkString(",").replace("|", ""), label.toString)
         case _ => ()
       }
     }
