@@ -90,7 +90,7 @@ object LexicalRatioClassifier {
 
     if (targetsInputFile.value != None) {
       val targets = new scala.collection.mutable.HashMap[String, String]
-      scala.io.Source.fromFile(targetsInputFile.value.get, "utf-8").getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+      scala.io.Source.fromFile(targetsInputFile.value.get, "utf-8").getLines.foreach(p => targets.put(p.split("|")(0).trim, p.split("|")(1).trim))
       PerTargetEvaluator(tweets, targets)
     }
   }
