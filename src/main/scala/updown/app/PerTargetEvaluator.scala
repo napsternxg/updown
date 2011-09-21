@@ -10,6 +10,7 @@ import opennlp.maxent.io._
 import opennlp.model._
 
 import org.clapper.argot._
+import collection.mutable.HashMap
 
 /**
  *
@@ -35,17 +36,19 @@ object PerTargetEvaluator {
 
   def apply(tweets: List[Tweet], targets: scala.collection.mutable.HashMap[String, String]) = evaluate(tweets, targets)
 
-  def evaluate(tweets: List[Tweet], targets: scala.collection.mutable.HashMap[String, String]) = {
+  def computeEvaluation(tweets: scala.List[Tweet], targets: HashMap[String, String]): (List[(String, Double)], Int, HashMap[String, List[Tweet]]) = {
     var totalError = 0.0
     var totalNumAbstained = 0
     //val usersToTweets = new scala.collection.mutable.HashMap[String, List[Tweet]] { override def default(s: String) = List() }
-    val targetsToTweets = new scala.collection.mutable.HashMap[String, List[Tweet]] { override def default(s: String) = List() }
+    val targetsToTweets = new scala.collection.mutable.HashMap[String, List[Tweet]] {
+      override def default(s: String) = List()
+    }
     var targetsToAccuracies = List[(String, Double)]()
 
     //val minTPU = DEFAULT_MIN_TPU
     //println(tweets.length)
 
-    for(tweet <- tweets) {
+    for (tweet <- tweets) {
       //val prevList = targetsToTweets(tweet.userid)
       val curTarget = targets(tweet.id)
       targetsToTweets.put(curTarget, tweet :: targetsToTweets(curTarget))
@@ -54,42 +57,25 @@ object PerTargetEvaluator {
     //targetsToTweets.foreach(p => println(p._1+"   "+p._2.length))
 
     var numAbstained = 0
-    for(target <- targetsToTweets.keys) {
+    for (target <- targetsToTweets.keys) {
       val curTweets = targetsToTweets(target)
 
       val abstained = curTweets.count(_.systemLabel == null)
       numAbstained += abstained
-      val correct = curTweets.count(tweet => tweet.goldLabel == tweet.systemLabel) + abstained.toFloat/2
-      
+      val correct = curTweets.count(tweet => tweet.goldLabel == tweet.systemLabel) + abstained.toFloat / 2
+
       targetsToAccuracies = targetsToAccuracies ::: ((target, correct.toDouble / curTweets.length) :: Nil)
       /*for(tweet <- curTweets) {
         if(tweet.goldLabel == tweet.systemLabel)
       }*/
     }
 
-    targetsToAccuracies = targetsToAccuracies.sortWith((x, y) => targetsToTweets(x._1).length >= targetsToTweets(y._1).length)
+    targetsToAccuracies.sortWith((x, y) => targetsToTweets(x._1).length >= targetsToTweets(y._1).length)
+    (targetsToAccuracies, numAbstained, targetsToTweets)
+  }
 
-    /*for(userid <- usersToTweets.keys) {
-      val curTweets = usersToTweets(userid)
-
-      var numAbstained = 0
-      if(curTweets.length >= minTPU) {
-        var numGoldPos = 0
-        var numSysPos = 0.0
-        for(tweet <- curTweets) {
-          if(tweet.goldLabel == POS) numGoldPos += 1
-          if(tweet.systemLabel == POS) numSysPos += 1
-          else if(tweet.systemLabel == null) numAbstained += 1
-        }
-
-        numSysPos += numAbstained.toFloat / 2
-        totalError += math.pow((numGoldPos - numSysPos) / curTweets.length, 2)
-        totalNumAbstained += numAbstained
-      }
-    }
-
-    totalError /= usersToTweets.size
-    ****/
+  def evaluate(tweets: List[Tweet], targets: scala.collection.mutable.HashMap[String, String]) = {
+    val (targetsToAccuracies, numAbstained, targetsToTweets) = computeEvaluation(tweets, targets)
 
     println("\n***** PER TARGET EVAL *****")
     if(numAbstained > 0)
@@ -97,12 +83,6 @@ object PerTargetEvaluator {
     for((target, accuracy) <- targetsToAccuracies) {
       println(target+": "+accuracy+" ("+targetsToTweets(target).length+")")
     }
-
-    /*if(totalNumAbstained > 0)
-      println(totalNumAbstained + " tweets were abstained on; assuming half (" + (totalNumAbstained.toFloat/2) + ") were positive.")
-
-    println("Number of users evaluated: " + usersToTweets.size + " (min of " + minTPU + " tweets per user)")
-    println("Mean squared error: " + totalError)*/
   }
 
   def main(args: Array[String]) {

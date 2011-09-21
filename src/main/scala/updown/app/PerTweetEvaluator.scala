@@ -1,5 +1,6 @@
 package updown.app
 
+import model.EvaluationResult
 import updown.data._
 import updown.data.io._
 
@@ -32,12 +33,12 @@ object PerTweetEvaluator {
 
   def apply(tweets: List[Tweet]) = evaluate(tweets)
 
-  def evaluate(tweets: List[Tweet]) = {
+  def computeEvaluation(tweets: scala.List[Tweet]): (Double, Int, Int, String) =  {
     var correct = 0.0
     var total = 0
     var numAbstained = tweets.count(_.systemLabel == null)
 
-    for(tweet <- tweets) {
+    for (tweet <- tweets) {
       println(tweet.systemLabel + "|" + tweet.goldLabel)
       /*
        * val normedTweet = tweet.normalize("alpha")
@@ -45,20 +46,26 @@ object PerTweetEvaluator {
       *  println(normedTweet.systemLabel + "|" + normedTweet.goldLabel + "\t" + normedNormedTweet.systemLabel + "|" + normedNormedTweet.goldLabel)
       */
       val normedTweet = tweet.normalize("alpha")
-      if(normedTweet.systemLabel == tweet.goldLabel) {
+      if (normedTweet.systemLabel == tweet.goldLabel) {
         correct += 1
       }
-      
+
       total += 1
     }
+    correct += numAbstained.toFloat / 3
+
+    (correct, total, numAbstained,
+      "Assumed one-third of the abstained results (%.2f of %d) were actually correct (this simulates the following situation: ".format(numAbstained.toFloat / 3, numAbstained) +
+        "a tweet has an equal number of positive and negative features, and zero neutral features. Since more than " +
+        "a third of these are actually POS or NEG (empirically), we randomy assign a label to them.")
+  }
+
+  def evaluate(tweets: List[Tweet]) = {
+    val (correct, total, abstained, message) = computeEvaluation(tweets)
 
     println("\n***** PER TWEET EVAL *****")
-
-    if(numAbstained > 0) {
-      correct += numAbstained.toFloat / 3
-      println(numAbstained + " tweets were abstained on; assuming one-third (" + (numAbstained.toFloat/3) + ") were correct.")
-    }
-    println("Accuracy: "+(correct.toFloat/total)+" ("+correct+"/"+total+")")
+    println("Accuracy: %.2f (%.2f/%d)".format(correct/total,correct,total))
+    println(message)
   }
 
 
