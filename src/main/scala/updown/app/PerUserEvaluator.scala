@@ -1,6 +1,5 @@
 package updown.app
 
-import model.EvaluationResult
 import updown.data._
 import updown.data.io._
 
@@ -135,16 +134,8 @@ object PerUserEvaluator {
     val goldLines = scala.io.Source.fromFile(goldInputFile.value.get, "utf-8").getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
-
     for (tweet <- tweets) {
-      val result = model.eval(tweet.features.toArray)
-
-      val posProb = if(posIndex >= 0) result(posIndex) else 0.0
-      val negProb = if(negIndex >= 0) result(negIndex) else 0.0
-      val neuProb = if (neuIndex >= 0) result(neuIndex) else 0.0
-      if (posProb >= negProb && posProb >= neuProb) tweet.systemLabel = POS
-      else if (negProb > posProb && negProb > neuProb) tweet.systemLabel = NEG
-      else if (neuProb > posProb && neuProb > negProb) tweet.systemLabel == NEU
+      tweet.systemLabel = SentimentLabel.figureItOut(model.getBestOutcome(model.eval(tweet.features.toArray)))
     }
 
     evaluate(tweets)

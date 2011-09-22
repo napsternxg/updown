@@ -28,13 +28,13 @@ object LexicalRatioClassifier {
   val mpqaInputFile = parser.option[String](List("p", "mpqa"), "mpqa", "MPQA sentiment lexicon input file")
   val targetsInputFile = parser.option[String](List("t", "targets"), "targets", "targets")
 
-  def classifyTweet(numPosWords: Int, numNegWords: Int, numNeuWords: Int): String = {
+  def classifyTweet(numPosWords: Int, numNegWords: Int, numNeuWords: Int): SentimentLabel.Type = {
       if (numPosWords == numNegWords && numNeuWords == 0) null //this happens a lot...and more than 1/3 are either POS or NEG so accuracy would actually be improved by a random assignment of either NEG or POS
-      else if (numPosWords == numNegWords && numNeuWords == numPosWords) "0" //  could reasonably abstain on this
-      else if (numPosWords == numNegWords && numNeuWords != 0) "0" //Could reasonably abstain on this
-      else if (numNeuWords > numPosWords && numNeuWords > numNegWords) "0"
-      else if (numPosWords > numNegWords && numPosWords > numNeuWords) "1"
-      else if (numNegWords > numPosWords && numNegWords > numNeuWords) "-1"
+      else if (numPosWords == numNegWords && numNeuWords == numPosWords) SentimentLabel.Neutral //  could reasonably abstain on this
+      else if (numPosWords == numNegWords && numNeuWords != 0) SentimentLabel.Neutral //Could reasonably abstain on this
+      else if (numNeuWords > numPosWords && numNeuWords > numNegWords) SentimentLabel.Neutral
+      else if (numPosWords > numNegWords && numPosWords > numNeuWords) SentimentLabel.Positive
+      else if (numNegWords > numPosWords && numNegWords > numNeuWords) SentimentLabel.Negative
       else null
   }
 

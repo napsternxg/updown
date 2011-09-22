@@ -16,13 +16,14 @@ import collection.mutable.HashMap
  *
  * This object evaluates each tweet's system label against its gold label, and groups them according to target
  * (for the HCR dataset only), giving an accuracy score for each target.
- * 
+ *
  * @author Mike Speriosu
  */
 object PerTargetEvaluator {
 
   import ArgotConverters._
-  val parser = new ArgotParser("updown run updown.app.PerTweetEvaluator", preUsage=Some("Updown"))
+
+  val parser = new ArgotParser("updown run updown.app.PerTweetEvaluator", preUsage = Some("Updown"))
 
   val modelInputFile = parser.option[String](List("m", "model"), "model", "model input")
   val goldInputFile = parser.option[String](List("g", "gold"), "gold", "gold labeled input")
@@ -50,11 +51,11 @@ object PerTargetEvaluator {
 
     for (tweet <- tweets) {
       //val prevList = targetsToTweets(tweet.userid)
-      if (targets.contains(tweet.id)){
+      if (targets.contains(tweet.id)) {
         val curTarget = targets(tweet.id)
         targetsToTweets.put(curTarget, tweet :: targetsToTweets(curTarget))
       } else {
-        System.err.println("missing target for "+tweet.id)
+        System.err.println("missing target for " + tweet.id)
       }
     }
 
@@ -82,26 +83,30 @@ object PerTargetEvaluator {
     val (targetsToAccuracies, numAbstained, targetsToTweets) = computeEvaluation(tweets, targets)
 
     println("\n***** PER TARGET EVAL *****")
-    if(numAbstained > 0)
-      println(numAbstained + " tweets were abstained on; assuming half (" + (numAbstained.toFloat/2) + ") were correct.")
-    for((target, accuracy) <- targetsToAccuracies) {
-      println(target+": "+accuracy+" ("+targetsToTweets(target).length+")")
+    if (numAbstained > 0)
+      println(numAbstained + " tweets were abstained on; assuming half (" + (numAbstained.toFloat / 2) + ") were correct.")
+    for ((target, accuracy) <- targetsToAccuracies) {
+      println(target + ": " + accuracy + " (" + targetsToTweets(target).length + ")")
     }
   }
 
   def main(args: Array[String]) {
-    try { parser.parse(args) }
-    catch { case e: ArgotUsageException => println(e.message); sys.exit(0) }
+    try {
+      parser.parse(args)
+    }
+    catch {
+      case e: ArgotUsageException => println(e.message); sys.exit(0)
+    }
 
-    if(modelInputFile.value == None) {
+    if (modelInputFile.value == None) {
       println("You must specify a model input file via -m.")
       sys.exit(0)
     }
-    if(goldInputFile.value == None) {
+    if (goldInputFile.value == None) {
       println("You must specify a gold labeled input file via -g.")
       sys.exit(0)
     }
-    if(targetsInputFile.value == None) {
+    if (targetsInputFile.value == None) {
       println("You must specify a targets input file via -t.")
       sys.exit(0)
     }
@@ -111,19 +116,13 @@ object PerTargetEvaluator {
 
     val model = reader.getModel
 
-    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get,"utf-8").getLines.toList
+    val goldLines = scala.io.Source.fromFile(goldInputFile.value.get, "utf-8").getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
-
-    for(tweet <- tweets) {
-      val result = model.eval(tweet.features.toArray)
-      
-      val posProb = result(0)
-
-      val negProb = result(2)
-
-      tweet.systemLabel = if(posProb >= negProb) POS else NEG
+    for (tweet <- tweets) {
+      tweet.systemLabel = SentimentLabel.figureItOut(model.getBestOutcome(model.eval(tweet.features.toArray)))
     }
+
 
     val targets = new scala.collection.mutable.HashMap[String, String]
 
