@@ -5,10 +5,7 @@ import updown.data.io._
 
 import java.io._
 
-import opennlp.maxent._
 import opennlp.maxent.io._
-import opennlp.model._
-
 import org.clapper.argot._
 import ArgotConverters._
 
@@ -23,7 +20,7 @@ object PerTweetEvaluator {
   // this exists purely to make the ArgotConverters appear used to IDEA
   convertByte _
 
-  def tabulate(tweets: scala.List[Tweet]): (Double, Int, Int, String) = {
+  def tabulate(tweets: scala.List[SystemLabeledTweet]): (Double, Int, Int, String) = {
     var correct = 0.0
     var total = 0
     var numAbstained = tweets.count(_.systemLabel == null)
@@ -35,7 +32,7 @@ object PerTweetEvaluator {
       *  val normedNormedTweet = normedTweet.normalize("int")
       *  println(normedTweet.systemLabel + "|" + normedTweet.goldLabel + "\t" + normedNormedTweet.systemLabel + "|" + normedNormedTweet.goldLabel)
       */
-//      val normedTweet = tweet.normalize("alpha")
+      //      val normedTweet = tweet.normalize("alpha")
       if (tweet.systemLabel == tweet.goldLabel) {
         correct += 1
       }
@@ -50,7 +47,7 @@ object PerTweetEvaluator {
         "a third of these are actually POS or NEG (empirically), we randomy assign a label to them.")
   }
 
-  def apply(tweets: List[Tweet]) = {
+  def apply(tweets: List[SystemLabeledTweet]) = {
 
     val (correct, total, abstained, message) = tabulate(tweets)
 
@@ -86,9 +83,13 @@ object PerTweetEvaluator {
 
     val model = reader.getModel
     val tweets = TweetFeatureReader(goldInputFile.value.get)
-    for (tweet <- tweets) {
-      tweet.systemLabel = SentimentLabel.figureItOut(model.getBestOutcome(model.eval(tweet.features.toArray)))
-    }
-    apply(tweets)
+
+    apply(for (tweet <- tweets) yield {
+      tweet match {
+        case GoldLabeledTweet(id, userid, features, goldLabel) =>
+          SystemLabeledTweet(id, userid, features, goldLabel,
+            SentimentLabel.figureItOut(model.getBestOutcome(model.eval(features.toArray))))
+      }
+    })
   }
 }

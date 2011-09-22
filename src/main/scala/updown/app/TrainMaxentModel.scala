@@ -25,11 +25,13 @@ object TrainMaxentModel {
   val DEFAULT_CUTOFF = 5
 
 
-  def apply(fileName: String, iterations: Int, cutoff: Int): AbstractModel = 
+  def apply(fileName: String, iterations: Int, cutoff: Int): AbstractModel =
     GIS.trainModel(MaxentEventStreamFactory(fileName), iterations, cutoff)
+  def apply(fileName: String): AbstractModel = apply(fileName, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
   def apply(iterator: Iterator[String], iterations:Int, cutoff:Int): AbstractModel =
     GIS.trainModel(MaxentEventStreamFactory(iterator), iterations, cutoff)
+  def apply(iterator: Iterator[String]): AbstractModel = apply(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
   def main(args: Array[String]) {
     val parser = new ArgotParser("updown run updown.app.TrainMaxentModel", preUsage = Some("Updown"))

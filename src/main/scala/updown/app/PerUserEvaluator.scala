@@ -34,9 +34,9 @@ object PerUserEvaluator {
 
   val DEFAULT_MIN_TPU = 3
 
-  def apply(tweets: List[Tweet]) = evaluate(tweets)
+  def apply(tweets: List[SystemLabeledTweet]) = evaluate(tweets)
 
-  def computeEvaluation(tweets: scala.List[Tweet]): (Int, Int, Double, String) = {
+  def computeEvaluation(tweets: scala.List[SystemLabeledTweet]): (Int, Int, Double, String) = {
     var totalError = 0.0;
     var totalErrorAlt = 0.0
     var totalNumAbstained = 0
@@ -63,13 +63,21 @@ object PerUserEvaluator {
         var numSysNeu = 0.0
 
         for (tweet <- curTweets) {
-          if (tweet.goldLabel == POS) numGoldPos += 1
-          else if (tweet.goldLabel == NEG) numGoldNeg += 1
-          else if (tweet.goldLabel == NEU) numGoldNeu += 1
-          if (tweet.systemLabel == POS && doRandom.value == None) numSysPos += 1
-          else if (tweet.systemLabel == NEG && doRandom.value == None) numSysNeg += 1
-          else if (tweet.systemLabel == NEU && doRandom.value == None) numSysNeu += 1
-          else if (tweet.systemLabel == null || doRandom.value != None) numAbstained += 1
+          tweet match {
+            case SystemLabeledTweet(_, _, _, SentimentLabel.Positive, _) => numGoldPos += 1
+            case SystemLabeledTweet(_, _, _, SentimentLabel.Negative, _) => numGoldNeg += 1
+            case SystemLabeledTweet(_, _, _, SentimentLabel.Neutral, _) => numGoldNeu += 1
+          }
+          if (doRandom == None) {
+            tweet match {
+              case SystemLabeledTweet(_, _, _, _, SentimentLabel.Positive) => numSysPos += 1
+              case SystemLabeledTweet(_, _, _, _, SentimentLabel.Negative) => numSysNeg += 1
+              case SystemLabeledTweet(_, _, _, _, SentimentLabel.Neutral) => numSysNeu += 1
+              case SystemLabeledTweet(_, _, _, _, null) => numAbstained += 1
+            }
+          } else {
+            numAbstained += 1
+          }
         }
 
         numSysPos += numAbstained.toFloat / 3
@@ -90,7 +98,7 @@ object PerUserEvaluator {
       "(min of " + minTPU + " tweets per user)")
   }
 
-  def evaluate(tweets: List[Tweet]) = {
+  def evaluate(tweets: List[SystemLabeledTweet]) = {
     val (total, abstained, error, message) = computeEvaluation(tweets)
 
     println("\n***** PER USER EVAL *****")
@@ -134,10 +142,12 @@ object PerUserEvaluator {
     val goldLines = scala.io.Source.fromFile(goldInputFile.value.get, "utf-8").getLines.toList
 
     val tweets = TweetFeatureReader(goldInputFile.value.get)
-    for (tweet <- tweets) {
-      tweet.systemLabel = SentimentLabel.figureItOut(model.getBestOutcome(model.eval(tweet.features.toArray)))
-    }
-
-    evaluate(tweets)
+    evaluate(for (tweet <- tweets) yield {
+      tweet match {
+        case GoldLabeledTweet(id, userid, features, goldLabel) =>
+          SystemLabeledTweet(id, userid, features, goldLabel,
+            SentimentLabel.figureItOut(model.getBestOutcome(model.eval(features.toArray))))
+      }
+    })
   }
 }

@@ -38,14 +38,14 @@ object LexicalRatioClassifier {
       else null
   }
 
-  def classifyTweets(tweets: scala.List[Tweet], lexicon: MPQALexicon) {
-    for (tweet <- tweets) {
+  def classifyTweets(tweets: scala.List[Tweet], lexicon: MPQALexicon):List[SystemLabeledTweet] = {
+    (for (GoldLabeledTweet(id, userid, features, goldLabel) <- tweets) yield {
 
       var numPosWords = 0
       var numNegWords = 0
       var numNeuWords = 0
 
-      for (feature <- tweet.features) {
+      for (feature <- features) {
         if (lexicon.contains(feature)) {
           val entry = lexicon(feature)
           if (entry.isPositive) numPosWords += 1
@@ -53,9 +53,8 @@ object LexicalRatioClassifier {
           if (entry.isNeutral) numNeuWords += 1
         }
       }
-
-      tweet.systemLabel = classifyTweet(numPosWords, numNegWords, numNeuWords)
-    }
+      SystemLabeledTweet(id, userid, features, goldLabel, classifyTweet(numPosWords, numNegWords, numNeuWords))
+    }).toList
   }
 
   def main(args: Array[String]) {
@@ -75,7 +74,7 @@ object LexicalRatioClassifier {
       sys.exit(0)
     }
 
-    val tweets = TweetFeatureReader(goldInputFile.value.get)
+
     val lexicon = MPQALexicon(mpqaInputFile.value.get)
 
     //println("mpqa lex val for word 'good': " + lexicon.peek("good"))    
@@ -83,7 +82,7 @@ object LexicalRatioClassifier {
     var totTweets = 0
     var numAbstained = 0
 
-    classifyTweets(tweets, lexicon)
+    val tweets = classifyTweets(TweetFeatureReader(goldInputFile.value.get), lexicon)
     
     PerTweetEvaluator(tweets)
     PerUserEvaluator(tweets)

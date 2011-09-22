@@ -101,23 +101,18 @@ object JuntoClassifier {
 
     val edgeSeedSet = edgeSeedSetOption.value.getOrElse(DEFAULT_EDGE_SEED_SET)
 
-    val tweets = TweetFeatureReader(goldInputFile.value.get)
-    //tweets.foreach(println)
+    val goldLabeledTweets: List[GoldLabeledTweet] = TweetFeatureReader(goldInputFile.value.get)
 
     if (refCorpusProbsFile.value != None) {
       refCorpusNgramProbs = loadRefCorpusNgramProbs(refCorpusProbsFile.value.get)
-      thisCorpusNgramProbs = computeNgramProbs(tweets)
+      thisCorpusNgramProbs = computeNgramProbs(goldLabeledTweets)
     }
 
     val lexicon = MPQALexicon(mpqaInputFile.value.get)
 
-    val graph = createGraph(tweets, followerGraphFile.value.get, modelInputFile.value.get, lexicon, edgeSeedSet)
-
-    //graph.SaveEstimatedScores("input-graph")
+    val graph = createGraph(goldLabeledTweets, followerGraphFile.value.get, modelInputFile.value.get, lexicon, edgeSeedSet)
 
     JuntoRunner(graph, mu1.value.getOrElse(DEFAULT_MU1), .01, .01, iterations.value.getOrElse(DEFAULT_ITERATIONS), false)
-
-    //graph.SaveEstimatedScores("output-graph")
 
     val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, SentimentLabel.Type]
 
@@ -154,20 +149,23 @@ object JuntoClassifier {
       }
     }
 
-    for (tweet <- tweets) {
-      if (tweetIdsToPredictedLabels.containsKey(tweet.id)) {
-        tweet.systemLabel = tweetIdsToPredictedLabels(tweet.id)
-        //println(TWEET_ + tweet.id + "\t" + tweet.systemLabel)
+    val systemLabeledTweets =
+      for (GoldLabeledTweet(id, userid, features, goldLabel) <- goldLabeledTweets) yield {
+        SystemLabeledTweet(id, userid, features, goldLabel,
+          if (tweetIdsToPredictedLabels.containsKey(id)) {
+            tweetIdsToPredictedLabels(id)
+          } else {
+            null
+          })
       }
-    }
 
-    PerTweetEvaluator(tweets)
-    PerUserEvaluator(tweets)
+    PerTweetEvaluator(systemLabeledTweets)
+    PerUserEvaluator(systemLabeledTweets)
     if (targetsInputFile.value != None) {
       val targets = new scala.collection.mutable.HashMap[String, String]
 
       scala.io.Source.fromFile(targetsInputFile.value.get, "utf-8").getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
-      PerTargetEvaluator(tweets, targets)
+      PerTargetEvaluator(systemLabeledTweets, targets)
     }
 
     if (topNOutputFile.value != None) {
@@ -193,7 +191,7 @@ object JuntoClassifier {
     }
   }
 
-  def createGraph(tweets: List[Tweet], followerGraphFile: String, modelInputFile: String, lexicon: MPQALexicon, edgeSeedSet: String) = {
+  def createGraph(tweets: List[GoldLabeledTweet], followerGraphFile: String, modelInputFile: String, lexicon: MPQALexicon, edgeSeedSet: String) = {
     val edges = (if (edgeSeedSet.contains("n")) getTweetNgramEdges(tweets) else Nil) :::
       (if (edgeSeedSet.contains("f")) (getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(tweets)) else Nil)
     val seeds = (if (edgeSeedSet.contains("m")) getMaxentSeeds(tweets, modelInputFile) else Nil) :::
@@ -202,7 +200,7 @@ object JuntoClassifier {
     GraphBuilder(edges, seeds)
   }
 
-  def getTweetNgramEdges(tweets: List[Tweet]): List[Edge] = {
+  def getTweetNgramEdges(tweets: List[GoldLabeledTweet]): List[Edge] = {
     (for (tweet <- tweets) yield {
       for (ngram <- tweet.features) yield {
         val weight = getNgramWeight(ngram)
@@ -217,7 +215,7 @@ object JuntoClassifier {
     }).flatten.flatten
   }
 
-  def getUserTweetEdges(tweets: List[Tweet]): List[Edge] = {
+  def getUserTweetEdges(tweets: List[GoldLabeledTweet]): List[Edge] = {
     for (tweet <- tweets) yield {
       //println(USER_ + tweet.userid + "   " + TWEET_ + tweet.id)
       new Edge(USER_ + tweet.userid, TWEET_ + tweet.id, 1.0)
@@ -236,7 +234,7 @@ object JuntoClassifier {
     }).flatten.toList
   }
 
-  def getMaxentSeeds(tweets: List[Tweet], modelInputFile: String): List[Label] = {
+  def getMaxentSeeds(tweets: List[GoldLabeledTweet], modelInputFile: String): List[Label] = {
     val dataInputStream = new DataInputStream(new FileInputStream(modelInputFile));
     val reader = new BinaryGISModelReader(dataInputStream)
     val model = reader.getModel
@@ -308,7 +306,7 @@ object JuntoClassifier {
     }
   }
 
-  def computeNgramProbs(tweets: List[Tweet]): scala.collection.mutable.HashMap[String, Double] = {
+  def computeNgramProbs(tweets: List[GoldLabeledTweet]): scala.collection.mutable.HashMap[String, Double] = {
     val probs = new scala.collection.mutable.HashMap[String, Double] {
       override def default(s: String) = 0.0
     }
@@ -389,15 +387,15 @@ object TransductiveJuntoClassifier {
     val edgeSeedSet = edgeSeedSetOption.value.getOrElse(DEFAULT_EDGE_SEED_SET)
 
     val trainTweets = TweetFeatureReader(goldInputFile.value.get)
-    val testTweets = TweetFeatureReader(testInputFile.value.get)
-    val totalTweets = trainTweets ::: testTweets
+    val goldLabeledTestTweets = TweetFeatureReader(testInputFile.value.get)
+    val totalTweets = trainTweets ::: goldLabeledTestTweets
 
     if (refCorpusProbsFile.value != None) {
       refCorpusNgramProbs = loadRefCorpusNgramProbs(refCorpusProbsFile.value.get)
       thisCorpusNgramProbs = computeNgramProbs(totalTweets)
     }
 
-    val graph = createTransductiveGraph(trainTweets, followerGraphFile.value.get, testTweets, followerGraphFileTest.value.get, edgeSeedSet)
+    val graph = createTransductiveGraph(trainTweets, followerGraphFile.value.get, goldLabeledTestTweets, followerGraphFileTest.value.get, edgeSeedSet)
 
     JuntoRunner(graph, mu1.value.getOrElse(DEFAULT_MU1), .01, .01, iterations.value.getOrElse(DEFAULT_ITERATIONS), false)
 
@@ -419,24 +417,27 @@ object TransductiveJuntoClassifier {
       }
     }
 
-    for (tweet <- testTweets) {
-      if (tweetIdsToPredictedLabels.containsKey(tweet.id)) {
-        tweet.systemLabel = tweetIdsToPredictedLabels(tweet.id)
-        //println(TWEET_ + tweet.id + "\t" + tweet.systemLabel)
+    val systemLabeledTestTweets =
+      for (GoldLabeledTweet(id, userid, features, goldLabel) <- goldLabeledTestTweets) yield {
+        SystemLabeledTweet(id, userid, features, goldLabel,
+          if (tweetIdsToPredictedLabels.containsKey(id)) {
+            tweetIdsToPredictedLabels(id)
+          } else {
+            null
+          })
       }
-    }
 
-    PerTweetEvaluator.apply(testTweets)
-    PerUserEvaluator.evaluate(testTweets)
+    PerTweetEvaluator.apply(systemLabeledTestTweets)
+    PerUserEvaluator.evaluate(systemLabeledTestTweets)
     if (targetsInputFile.value != None) {
       val targets = new scala.collection.mutable.HashMap[String, String]
 
       scala.io.Source.fromFile(targetsInputFile.value.get, "utf-8").getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
-      PerTargetEvaluator(testTweets, targets)
+      PerTargetEvaluator(systemLabeledTestTweets, targets)
     }
   }
 
-  def createTransductiveGraph(trainTweets: List[Tweet], followerGraphFile: String, testTweets: List[Tweet], followerGraphFileTest: String, edgeSeedSet: String) = {
+  def createTransductiveGraph(trainTweets: List[GoldLabeledTweet], followerGraphFile: String, testTweets: List[GoldLabeledTweet], followerGraphFileTest: String, edgeSeedSet: String) = {
     val totalTweets = trainTweets ::: testTweets
     val edges = (if (edgeSeedSet.contains("n")) getTweetNgramEdges(totalTweets) else Nil) :::
       (if (edgeSeedSet.contains("f")) (getFollowerEdges(followerGraphFile) ::: getUserTweetEdges(totalTweets) :::
@@ -446,14 +447,13 @@ object TransductiveJuntoClassifier {
     GraphBuilder(edges, seeds)
   }
 
-  def getGoldSeeds(tweets: List[Tweet]): List[Label] = {
+  def getGoldSeeds(tweets: List[GoldLabeledTweet]): List[Label] = {
     for (tweet <- tweets) yield {
-      if (tweet.goldLabel == POS)
-        new Label(TWEET_ + tweet.id, POS, 1.0)
-      else if (tweet.goldLabel == NEG)
-        new Label(TWEET_ + tweet.id, NEG, 1.0)
-      else
-        new Label(TWEET_ + tweet.id, NEG, 1.0)
+      tweet match {
+        case GoldLabeledTweet(id, _, _, SentimentLabel.Positive) => new Label(TWEET_ + id, POS, 1.0)
+        case GoldLabeledTweet(id, _, _, SentimentLabel.Negative) => new Label(TWEET_ + id, POS, 1.0)
+        case GoldLabeledTweet(id, _, _, SentimentLabel.Neutral) => new Label(TWEET_ + id, POS, 1.0)
+      }
     }
   }
 }
