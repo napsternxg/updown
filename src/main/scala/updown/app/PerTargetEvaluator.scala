@@ -33,24 +33,14 @@ object PerTargetEvaluator {
   val NEG = "NEG"
   val NEU = "NEU"
 
-  //val DEFAULT_MIN_TPU = 1
-
-  def apply(tweets: List[Tweet], targets: scala.collection.mutable.HashMap[String, String]) = evaluate(tweets, targets)
-
-  def computeEvaluation(tweets: scala.List[Tweet], targets: HashMap[String, String]): (List[(String, Double)], Int, HashMap[String, List[Tweet]]) = {
-    var totalError = 0.0
-    var totalNumAbstained = 0
-    //val usersToTweets = new scala.collection.mutable.HashMap[String, List[Tweet]] { override def default(s: String) = List() }
-    val targetsToTweets = new scala.collection.mutable.HashMap[String, List[Tweet]] {
+  def computeEvaluation(tweets: scala.List[SystemLabeledTweet], targets: HashMap[String, String]):
+  (List[(String, Double)], Int, HashMap[String, List[SystemLabeledTweet]]) = {
+    val targetsToTweets = new scala.collection.mutable.HashMap[String, List[SystemLabeledTweet]] {
       override def default(s: String) = List()
     }
     var targetsToAccuracies = List[(String, Double)]()
 
-    //val minTPU = DEFAULT_MIN_TPU
-    //println(tweets.length)
-
     for (tweet <- tweets) {
-      //val prevList = targetsToTweets(tweet.userid)
       if (targets.contains(tweet.id)) {
         val curTarget = targets(tweet.id)
         targetsToTweets.put(curTarget, tweet :: targetsToTweets(curTarget))
@@ -58,8 +48,6 @@ object PerTargetEvaluator {
         System.err.println("missing target for " + tweet.id)
       }
     }
-
-    //targetsToTweets.foreach(p => println(p._1+"   "+p._2.length))
 
     var numAbstained = 0
     for (target <- targetsToTweets.keys) {
@@ -70,16 +58,13 @@ object PerTargetEvaluator {
       val correct = curTweets.count(tweet => tweet.goldLabel == tweet.systemLabel) + abstained.toFloat / 2
 
       targetsToAccuracies = targetsToAccuracies ::: ((target, correct.toDouble / curTweets.length) :: Nil)
-      /*for(tweet <- curTweets) {
-        if(tweet.goldLabel == tweet.systemLabel)
-      }*/
     }
 
     targetsToAccuracies.sortWith((x, y) => targetsToTweets(x._1).length >= targetsToTweets(y._1).length)
     (targetsToAccuracies, numAbstained, targetsToTweets)
   }
 
-  def evaluate(tweets: List[Tweet], targets: scala.collection.mutable.HashMap[String, String]) = {
+  def apply(tweets: List[SystemLabeledTweet], targets: scala.collection.mutable.HashMap[String, String]) = {
     val (targetsToAccuracies, numAbstained, targetsToTweets) = computeEvaluation(tweets, targets)
 
     println("\n***** PER TARGET EVAL *****")
@@ -118,11 +103,13 @@ object PerTargetEvaluator {
 
     val goldLines = scala.io.Source.fromFile(goldInputFile.value.get, "utf-8").getLines.toList
 
-    val tweets = TweetFeatureReader(goldInputFile.value.get)
-    for (tweet <- tweets) {
-      tweet.systemLabel = SentimentLabel.figureItOut(model.getBestOutcome(model.eval(tweet.features.toArray)))
-    }
-
+    val tweets = (for (tweet <- TweetFeatureReader(goldInputFile.value.get)) yield {
+      tweet match {
+        case GoldLabeledTweet(id, userid, features, goldLabel) =>
+          SystemLabeledTweet(id, userid, features, goldLabel,
+            SentimentLabel.figureItOut(model.getBestOutcome(model.eval(features.toArray))))
+      }
+    })
 
     val targets = new scala.collection.mutable.HashMap[String, String]
 
@@ -130,6 +117,6 @@ object PerTargetEvaluator {
 
     //targets.foreach(p => println(p._1+" "+p._2))
 
-    evaluate(tweets, targets)
+    apply(tweets, targets)
   }
 }

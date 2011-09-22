@@ -5,7 +5,7 @@ import updown.data._
 object TweetFeatureReader {
   val featureRowRE = """^([^|]*)\|([^|]*)\|([^|]*)\|(.*)$""".r //python verbose regexes are so much nicer :/
 
-  def apply(inputFile: String): List[Tweet] = {
+  def apply(inputFile: String): List[GoldLabeledTweet] = {
 
     val lines = scala.io.Source.fromFile(inputFile, "utf-8").getLines.toList
 
@@ -14,20 +14,10 @@ object TweetFeatureReader {
     }
   }
 
-  def parseLine(line: String): Tweet = {
+  def parseLine(line: String): GoldLabeledTweet = {
     val featureRowRE(tweetid, userid, featureString, label) = line
     val features = featureString.split(",").toList.map(_.trim).filter(_.length > 0) // filter out features that are all whitespace or the empty string
 
-    val t = new Tweet(tweetid, userid, features, SentimentLabel.figureItOut(label))
-    t
+    GoldLabeledTweet(tweetid, userid, features, SentimentLabel.figureItOut(label))
   }
-/*
-  def standardize(label: String): String = {
-    label match {
-      case "1" => "POS"
-      case "-1" => "NEG"
-      case "0" => "NEU"
-      case _ => label
-    }
-  }*/
 }

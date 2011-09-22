@@ -2,8 +2,8 @@ package updown.app.model
 
 import opennlp.maxent.{DataStream, BasicEventStream}
 import updown.data.io.TweetFeatureReader
-import updown.data.{SentimentLabel, Tweet}
 import opennlp.model.EventStream
+import updown.data.{GoldLabeledTweet, SystemLabeledTweet, SentimentLabel, Tweet}
 
 object MaxentEventStreamFactory {
   val DEFAULT_DELIMITER = ","
@@ -15,7 +15,7 @@ object MaxentEventStreamFactory {
     new BasicEventStream(new DataStream {
       def nextToken(): AnyRef = {
         TweetFeatureReader.parseLine(iterator.next()) match {
-          case Tweet(tweetid, userid, features, label, systemLabel) =>
+          case GoldLabeledTweet(tweetid, userid, features, label) =>
             (features ::: (label::Nil)).mkString(DEFAULT_DELIMITER)
           case _ =>
             throw new RuntimeException("bad line")
