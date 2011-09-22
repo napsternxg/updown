@@ -52,7 +52,7 @@ object JuntoClassifier {
 
   val nodeRE = """^(.+_)(.+)$""".r
 
-  var refCorpusNgramProbs: ProbabilityLexicon/*scala.collection.mutable.HashMap[String, Double]*/ = null
+  var refCorpusNgramProbs: ProbabilityLexicon /*scala.collection.mutable.HashMap[String, Double]*/ = null
   var thisCorpusNgramProbs: scala.collection.mutable.HashMap[String, Double] = null
 
   var wordCount = 0
@@ -119,7 +119,7 @@ object JuntoClassifier {
 
     //graph.SaveEstimatedScores("output-graph")
 
-    val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, String]
+    val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, SentimentLabel.Type]
 
     val ngramsToPositivity = new scala.collection.mutable.HashMap[String, Double]
     val ngramsToNegativity = new scala.collection.mutable.HashMap[String, Double]
@@ -132,12 +132,13 @@ object JuntoClassifier {
         val negProb = predictions.get(NEG)
         val neuProb = predictions.get(NEU)
 
-        if (posProb >= negProb && posProb >= neuProb)
-          tweetIdsToPredictedLabels.put(nodeName, POS)
-        else if (negProb >= posProb && negProb >= neuProb)
-          tweetIdsToPredictedLabels.put(nodeName, NEG)
-        else
-          tweetIdsToPredictedLabels.put(nodeName, NEU)
+        tweetIdsToPredictedLabels(nodeName) =
+          if (posProb >= negProb && posProb >= neuProb)
+            SentimentLabel.Positive
+          else if (negProb >= posProb && negProb >= neuProb)
+            SentimentLabel.Negative
+          else
+            SentimentLabel.Neutral
       }
       else if (topNOutputFile.value != None && nodeType == NGRAM_ && !lexicon.contains(nodeName)
         && getNgramWeight(nodeName) >= 1.0 && thisCorpusNgramProbs(nodeName) * wordCount >= 5.0) {
@@ -248,8 +249,8 @@ object JuntoClassifier {
     (for (tweet <- tweets) yield {
       val result = model.eval(tweet.features.toArray)
 
-      val posProb = if(posIndex >= 0) result(posIndex) else 0.0
-      val negProb = if(negIndex >= 0) result(negIndex) else 0.0
+      val posProb = if (posIndex >= 0) result(posIndex) else 0.0
+      val negProb = if (negIndex >= 0) result(negIndex) else 0.0
       val neuProb = if (neuIndex >= 0) result(neuIndex) else 0.0
 
       //println(TWEET_ + tweet.id + "   " + POS + "   " + posProb)
@@ -295,7 +296,7 @@ object JuntoClassifier {
       }).toList.flatten
   }
 
-  def loadRefCorpusNgramProbs(filename: String): ProbabilityLexicon/*scala.collection.mutable.HashMap[String, Double]*/ = {
+  def loadRefCorpusNgramProbs(filename: String): ProbabilityLexicon /*scala.collection.mutable.HashMap[String, Double]*/ = {
     val gis = new GZIPInputStream(new FileInputStream(filename))
     val ois = new ObjectInputStream(gis)
     val refProbs = ois.readObject()
@@ -400,7 +401,7 @@ object TransductiveJuntoClassifier {
 
     JuntoRunner(graph, mu1.value.getOrElse(DEFAULT_MU1), .01, .01, iterations.value.getOrElse(DEFAULT_ITERATIONS), false)
 
-    val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, String]
+    val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, SentimentLabel.Type]
 
     for ((id, vertex) <- graph._vertices) {
       val nodeRE(nodeType, nodeName) = id
@@ -425,7 +426,7 @@ object TransductiveJuntoClassifier {
       }
     }
 
-    PerTweetEvaluator.evaluate(testTweets)
+    PerTweetEvaluator.apply(testTweets)
     PerUserEvaluator.evaluate(testTweets)
     if (targetsInputFile.value != None) {
       val targets = new scala.collection.mutable.HashMap[String, String]

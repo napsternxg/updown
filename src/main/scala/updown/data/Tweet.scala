@@ -1,16 +1,16 @@
 package updown.data
 
-class Tweet(val id: String,
+case class Tweet(val id: String,
             val userid: String,
             val features: List[String],
-            val goldLabel: String,
-            var systemLabel: String) {
+            val goldLabel: SentimentLabel.Type,
+            var systemLabel: SentimentLabel.Type) {
   /* val POS_ALPHA = "POS"; val POS_INT = "1"
   val NEG_ALPHA = "NEG"; val NEG_INT = "-1"
   val NEU_ALPHA = "NEU"; val NEU_INT = "0"
   */
-  def this(id: String, userid: String, features: List[String], goldLabel: String) {
-    this (id, userid, features, goldLabel.toString.trim, null)
+  def this(id: String, userid: String, features: List[String], goldLabel: SentimentLabel.Type) {
+    this (id, userid, features, goldLabel, null)
   }
 
   override def toString = "id: " + id + "\t" + "userid: " + userid + "\t" + "features: " + features + "\t" + "goldLabel: " + goldLabel + "\tsystemLabel: " + systemLabel
@@ -30,7 +30,7 @@ class Tweet(val id: String,
 
   }
 
-  /*
+  /*/*
    * param must contain string "alpha" or "int" -- former to map into alphas, latter to map into ints.
   */
   def normalize(res: String): Tweet = {
@@ -50,7 +50,7 @@ class Tweet(val id: String,
     }
     new Tweet(this.id, this.userid, this.features, this.goldLabel.toString.trim, sl.toString.trim)
   }
-
+*/
 }
 	   
 	
