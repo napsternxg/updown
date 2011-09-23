@@ -10,6 +10,8 @@ import opennlp.model._
 
 import org.clapper.argot._
 import ArgotConverters._
+import updown.data.GoldLabeledTweet
+import updown.data.io.TweetFeatureReader
 
 /**
  * Train a maxent model from labeled tweet input where each line has the format:
@@ -27,11 +29,18 @@ object TrainMaxentModel {
 
   def apply(fileName: String, iterations: Int, cutoff: Int): AbstractModel =
     GIS.trainModel(MaxentEventStreamFactory(fileName), iterations, cutoff)
+
   def apply(fileName: String): AbstractModel = apply(fileName, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
-  def apply(iterator: Iterator[String], iterations:Int, cutoff:Int): AbstractModel =
-    GIS.trainModel(MaxentEventStreamFactory(iterator), iterations, cutoff)
-  def apply(iterator: Iterator[String]): AbstractModel = apply(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
+  def trainWithStringIterator(iterator: Iterator[String], iterations: Int, cutoff: Int): AbstractModel =
+    GIS.trainModel(MaxentEventStreamFactory.getWithStringIterator(iterator), iterations, cutoff)
+
+  //  def apply[String](iterator: Iterator[String]): AbstractModel = apply(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
+
+  def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet], iterations: Int, cutoff: Int): AbstractModel =
+    GIS.trainModel(MaxentEventStreamFactory.getWithGoldLabeledTweetIterator(iterator), iterations, cutoff)
+
+  def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet]): AbstractModel = trainWithGoldLabeledTweetIterator(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
   def main(args: Array[String]) {
     val parser = new ArgotParser("updown run updown.app.TrainMaxentModel", preUsage = Some("Updown"))

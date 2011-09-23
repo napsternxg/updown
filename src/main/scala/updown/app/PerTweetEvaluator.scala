@@ -20,6 +20,33 @@ object PerTweetEvaluator {
   // this exists purely to make the ArgotConverters appear used to IDEA
   convertByte _
 
+  val accurracy: (Double, Double) => Double =
+    (correct, total) => correct / total
+  val precision: (Double, Double) => Double =
+    (numCorrectlyLabeled, totalNumLabeled) => numCorrectlyLabeled / totalNumLabeled
+  val recall: (Double, Double) => Double =
+    (numCorrectlyLabeled, numberThatShouldHaveBeenLabeled) => numCorrectlyLabeled / numberThatShouldHaveBeenLabeled
+  val fScore: (Double, Double) => Double =
+    (precision, recall) => 2.0 * precision * recall / (precision + recall)
+
+  def getEvalStats(tweets: scala.List[SystemLabeledTweet]): (Double, List[(SentimentLabel.Type, Double, Double, Double)]) = {
+    val (correct, total, _, _) = tabulate(tweets)
+
+    (accurracy(correct, total.toDouble),
+      (for (label <- SentimentLabel.values) yield {
+        val goldList = tweets.filter((tweet) => tweet.goldLabel == label)
+        val systemList = tweets.filter((tweet) => tweet.systemLabel == label)
+        val labelPrecision = precision(
+          systemList.filter((tweet) => tweet.goldLabel == label).length,
+          systemList.length)
+        val labelRecall = recall(
+          goldList.filter((tweet) => tweet.systemLabel == label).length,
+          goldList.length
+        )
+        (label, labelPrecision, labelRecall, fScore(labelPrecision, labelRecall))
+      }).toList)
+  }
+
   def tabulate(tweets: scala.List[SystemLabeledTweet]): (Double, Int, Int, String) = {
     var correct = 0.0
     var total = 0
