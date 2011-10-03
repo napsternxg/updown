@@ -1,6 +1,15 @@
 package updown.util
 
 object TokenizationPipes {
+  val twokenize: (List[String]) => List[String] =
+    (ss) => ss.map((s) => Twokenize(s)).flatten
+
+  val twokenizeSkipGtOneGrams: (List[String]) => List[String] =
+    (ss) => ss.map((s) => if (s.contains(" "))
+      List(s)
+    else
+      Twokenize(s)).flatten
+
   val toLowercase: (List[String]) => List[String] =
     (ss) => ss.map((s) => s.toLowerCase)
 

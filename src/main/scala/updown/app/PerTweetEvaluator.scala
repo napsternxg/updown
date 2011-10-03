@@ -53,7 +53,7 @@ object PerTweetEvaluator {
     var numAbstained = tweets.count(_.systemLabel == null)
 
     for (tweet <- tweets) {
-      println(tweet.systemLabel + "|" + tweet.goldLabel)
+//      println(tweet.systemLabel + "|" + tweet.goldLabel)
       /*
        * val normedTweet = tweet.normalize("alpha")
       *  val normedNormedTweet = normedTweet.normalize("int")
@@ -78,9 +78,9 @@ object PerTweetEvaluator {
 
     val (correct, total, abstained, message) = tabulate(tweets)
 
-    println("\n***** PER TWEET EVAL *****")
-    println("Accuracy: %.2f (%.2f/%d)".format(correct / total, correct, total))
-    println(message)
+    System.err.println("\n***** PER TWEET EVAL *****\n" +
+      "Accuracy: %.2f (%.2f/%d)".format(correct / total, correct, total)+"\n" +
+      message)
   }
 
 
