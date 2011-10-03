@@ -22,7 +22,7 @@ object PreprocPangLeePolarityCorpus extends GenericPreprocessor {
         ).iterator
     } catch {
       case e: MatchError =>
-        System.err.println("Couldn't figure out what sentiment '%s' is supposed to be." +
+        logger.error("Couldn't figure out what sentiment '%s' is supposed to be." +
           " Try using 'pos', 'neg', or 'neu'. Skipping %s...".format(polarity, fileName))
         Iterator[(String, String, SentimentLabel.Type, String)]()
     }
