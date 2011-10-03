@@ -91,6 +91,6 @@ object NFoldMaxentExperiment extends NFoldExperiment {
     val inputFile = goldInputFile.value.get
     val results = doExperiment(inputFile, nFolds)
     val averages = averageResults(results)
-    println("\n"+reportResults(averages))
+    System.err.println("\n"+reportResults(averages))
   }
 }
