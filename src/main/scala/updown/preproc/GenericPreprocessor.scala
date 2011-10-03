@@ -5,14 +5,16 @@ import ArgotConverters._
 import updown.data.SentimentLabel
 import updown.util.{TokenizationPipes, Twokenize}
 import java.util.Collections
+import com.weiglewilczek.slf4s.Logging
 
-abstract class GenericPreprocessor {
+abstract class GenericPreprocessor extends Logging {
   // this is here to make ArgotConverters appear used to IDEA.
   convertString _
 
   def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, SentimentLabel.Type, String)]
 
   def getInputIterator(inputOption: Option[String]): Iterator[(String, String, SentimentLabel.Type, String)] = {
+    logger.debug("entering getInputIterator")
     inputOption match {
       case Some(fileNameList) =>
         (for ((name, polarity) <- fileNameList.split("\\s*,\\s*").map((pair) => {
@@ -29,7 +31,7 @@ abstract class GenericPreprocessor {
             case Array(id, reviewer, polarityString, text) =>
               (id, reviewer, SentimentLabel.figureItOut(polarityString), text)
             case _ =>
-              System.err.println("Input must be of the form id|reviewer|polarity|text.")
+              logger.error("Input must be of the form id|reviewer|polarity|text.")
               ("", "", SentimentLabel.Neutral, "")
           }
         })
@@ -37,6 +39,7 @@ abstract class GenericPreprocessor {
   }
 
   def main(args: Array[String]) {
+    logger.debug(args.toList.toString)
     // don't forget that this is linked to the pipeStages dict below
     val availablePipes = Set("addBiGrams", "twokenize", "twokenizeSkipGtOneGrams", "removeStopwords", "splitSpace")
 
@@ -48,10 +51,8 @@ abstract class GenericPreprocessor {
     val textPipeline = parser.option[String](List("textPipeline"), "PIPELINE",
       ("specify the desired pipe stages seperated by |: \"addBiGrams|twokenize\". " +
         "Available options are in %s.").format(availablePipes))
-    val debugOption = parser.flag[Boolean](List("d","debug"), "show debugging output")
     try {
       parser.parse(args)
-      val debug = debugOption.value.isDefined
 
       // SET UP IO
       var lineCount =
@@ -60,7 +61,7 @@ abstract class GenericPreprocessor {
           case None => 0
         }
 
-      if (debug) System.err.println("Inputfile: %s".format(inputFile.value))
+      logger.debug("Inputfile: %s".format(inputFile.value))
       val inputLines: Iterator[(String, String, SentimentLabel.Type, String)] =
         getInputIterator(inputFile.value)
 
@@ -84,7 +85,7 @@ abstract class GenericPreprocessor {
       // had to predefine the available pipes so they could be printed in the usage string, before the stopset can be parsed.
       assert(pipeStages.keySet == availablePipes)
 
-      if (debug) System.err.println("Pipeline option: %s".format(textPipeline.value))
+      logger.debug("Pipeline option: %s".format(textPipeline.value))
       val pipeline: List[(List[String]) => List[String]] =
         if (textPipeline.value.isDefined) {
           val arg: String = textPipeline.value.get
@@ -98,7 +99,7 @@ abstract class GenericPreprocessor {
         } else {
           List(pipeStages("twokenize"), pipeStages("removeStopwords"))
         }
-      if (debug) System.err.println("Pipeline: %s".format(pipeline))
+      logger.debug("Pipeline: %s".format(pipeline))
 
 
       // RUN
@@ -111,7 +112,7 @@ abstract class GenericPreprocessor {
             polarity))
         lineCount += 1
       }
-      if (debug) System.err.println("Done!")
+      logger.debug("Done!")
     }
     catch {
       case e: ArgotUsageException =>

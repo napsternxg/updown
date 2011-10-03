@@ -13,5 +13,6 @@ class UpdownProject (info: ProjectInfo) extends DefaultProject(info)  with ScctP
   val opennlpMaxent = "org.apache.opennlp" % "opennlp-maxent" % "3.0.1-incubating"
   val argot = "org.clapper" %% "argot" % "0.3.5"
   val scalatest = "org.scalatest" % "scalatest_2.9.1" % "1.6.1"
+  val slf4s = "com.weiglewilczek.slf4s" %% "slf4s" % "1.0.7"
 }
 

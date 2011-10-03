@@ -3,7 +3,7 @@
 JARS=`echo $UPDOWN_DIR/lib/*.jar $UPDOWN_DIR/lib_managed/*/*.jar $UPDOWN_DIR/output/*.jar $UPDOWN_DIR/target/*.jar | tr ' ' ':'`
 SCALA_LIB="$UPDOWN_DIR/project/boot/scala-2.9.1/lib/scala-library.jar"
 
-CP=$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH
+CP=$UPDOWN_DIR/target/classes:$UPDOWN_DIR/config:$SCALA_LIB:$JARS:$CLASSPATH
 
 FIRSTARG=$1
 
