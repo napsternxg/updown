@@ -1,5 +1,7 @@
 package updown.util
 
+import util.matching.Regex
+
 object TokenizationPipes {
   val twokenize: (List[String]) => List[String] =
     (ss) => ss.map((s) => Twokenize(s)).flatten
@@ -20,6 +22,10 @@ object TokenizationPipes {
   val filterOnStopset: (Set[String]) => (List[String]) => List[String] =
     (stopSet) =>
       (ss) => ss.filter((s) => !stopSet.contains(s))
+
+  val filterOnRegex: (String)=> (List[String]) => List[String] =
+    (regex) =>
+      (ss) => ss.filter((s) => s.matches(regex))
 
   /*
     A really diligent implementation would put (n-1) "$"s at the beginning and end of the

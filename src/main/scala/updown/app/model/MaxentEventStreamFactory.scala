@@ -9,13 +9,13 @@ object MaxentEventStreamFactory {
   val DEFAULT_DELIMITER = ","
 
   def apply(fileName: String): EventStream = {
-    getWithStringIterator(scala.io.Source.fromFile(fileName).getLines)
+    getWithStringIterator(scala.io.Source.fromFile(fileName).getLines())
   }
 
   def getWithStringIterator(iterator: Iterator[String]): EventStream = {
     new BasicEventStream(new DataStream {
       def nextToken(): AnyRef = {
-        val GoldLabeledTweet(tweetid, userid, features, label) = TweetFeatureReader.parseLine(iterator.next())
+        val GoldLabeledTweet(_, _, features, label) = TweetFeatureReader.parseLine(iterator.next())
         (features ::: (label :: Nil)).mkString(DEFAULT_DELIMITER)
       }
 
@@ -26,7 +26,7 @@ object MaxentEventStreamFactory {
   def getWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet]): EventStream = {
     new BasicEventStream(new DataStream {
       def nextToken(): AnyRef = {
-        val GoldLabeledTweet(tweetid, userid, features, label) = iterator.next()
+        val GoldLabeledTweet(_, _, features, label) = iterator.next()
         (features ::: (label :: Nil)).mkString(DEFAULT_DELIMITER)
       }
 
