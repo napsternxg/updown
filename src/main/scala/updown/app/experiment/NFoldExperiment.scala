@@ -1,4 +1,4 @@
-package updown.app
+package updown.app.experiment
 
 import updown.data.io.TweetFeatureReader
 import updown.data.{SentimentLabel, GoldLabeledTweet}
@@ -38,51 +38,6 @@ abstract class NFoldExperiment extends Logging {
     }).iterator
   }
 
-
-
-  def initializeAverageList(list: List[(updown.data.SentimentLabel.Type, Double, Double, Double)]): List[(updown.data.SentimentLabel.Type, Double, Double, Double)] = {
-    if (list.length == 0)
-      Nil
-    else {
-      val ((lLabel, _, _, _) :: ls) = list
-      (lLabel, 0.0, 0.0, 0.0) :: initializeAverageList(ls)
-    }
-  }
-
-  def addAll(list: List[(updown.data.SentimentLabel.Type, Double, Double, Double)], to: List[(updown.data.SentimentLabel.Type, Double, Double, Double)]): List[(updown.data.SentimentLabel.Type, Double, Double, Double)] = {
-    if (list.length == 0)
-      Nil
-    else {
-      val ((lLabel, lPrecision, lRecall, lFScore) :: ls) = list
-      val ((tLabel, tPrecision, tRecall, tFScore) :: ts) = to
-      assert(lLabel == tLabel)
-      (lLabel, lPrecision + tPrecision, lRecall + tRecall, lFScore + tFScore) :: addAll(ls, ts)
-    }
-  }
-
-  def divideBy(list: List[(updown.data.SentimentLabel.Type, Double, Double, Double)], by: Double): List[(updown.data.SentimentLabel.Type, Double, Double, Double)] = {
-    if (list.length == 0)
-      Nil
-    else {
-      val ((lLabel, lPrecision, lRecall, lFScore) :: ls) = list
-      (lLabel, lPrecision / by, lRecall / by, lFScore / by) :: divideBy(ls, by)
-    }
-  }
-
-
-  def averageResults(results: scala.List[(Double, scala.List[(SentimentLabel.Type, Double, Double, Double)])]): (Double, scala.List[(SentimentLabel.Type, Double, Double, Double)]) = {
-    var avgAccuracy = 0.0
-    var avgLabelResultsList = initializeAverageList(results(0)._2)
-    for ((accuracy, labelResults) <- results) {
-      avgAccuracy += accuracy
-      avgLabelResultsList = addAll(labelResults, avgLabelResultsList)
-    }
-    avgAccuracy /= results.length
-    avgLabelResultsList = divideBy(avgLabelResultsList, results.length)
-    (avgAccuracy, avgLabelResultsList)
-
-  }
-
   def main(args: Array[String]) {
     val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Updown"))
     val goldInputFile = parser.option[String](List("g", "gold"), "gold", "gold labeled input")
@@ -103,8 +58,8 @@ abstract class NFoldExperiment extends Logging {
           doExperiment(testSet, trainSet)
         }).toList
 
-      val averages = averageResults(results)
-      System.err.println("\n" + Statistics.reportResults(averages))
+      logger.info("intermediate results:\n"+results.mkString("\n"))
+      println("\n" + Statistics.reportResults(Statistics.averageResults(results)))
     }
     catch {
       case e: ArgotUsageException => println(e.message); sys.exit(0)
