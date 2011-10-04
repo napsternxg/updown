@@ -14,7 +14,7 @@ class LDATopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
   model.addInstances(instanceList)
   model.setNumThreads(numTopics max MAX_THREADS)
   model.setNumIterations(numIterations)
-  ParallelTopicModel.logger.setLevel(Level.OFF)
+//  ParallelTopicModel.logger.setLevel(Level.OFF)
   model.estimate()
 
   def getTopics: List[Topic] = {
