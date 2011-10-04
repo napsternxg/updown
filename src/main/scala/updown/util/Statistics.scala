@@ -17,12 +17,7 @@ object Statistics extends Logging {
   val dot: (List[Double], List[Double]) => Double =
     (A,B) => {
       assert (A.length == B.length)
-//      (0.0 /: (A zip B).map{case(a,b) => a*b}) {_ + _}
-      if (A.length > 0 && B.length > 0) {
-        val a::as = A
-        val b::bs = B
-        (a * b) + dot(as, bs)
-      } else 0
+      (0.0 /: (A zip B).map{case(a,b) => a*b}) {_ + _}
     }
 
   val mag: (List[Double])=>Double =
