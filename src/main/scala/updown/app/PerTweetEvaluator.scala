@@ -53,7 +53,7 @@ object PerTweetEvaluator {
     var numAbstained = tweets.count(_.systemLabel == null)
 
     for (tweet <- tweets) {
-      println(tweet.systemLabel + "|" + tweet.goldLabel)
+      //println(tweet.systemLabel + "|" + tweet.goldLabel)
       /*
        * val normedTweet = tweet.normalize("alpha")
       *  val normedNormedTweet = normedTweet.normalize("int")
@@ -71,7 +71,7 @@ object PerTweetEvaluator {
     (correct, total, numAbstained,
       "Assumed one-third of the abstained results (%.2f of %d) were actually correct (this simulates the following situation: ".format(numAbstained.toFloat / 3, numAbstained) +
         "a tweet has an equal number of positive and negative features, and zero neutral features. Since more than " +
-        "a third of these are actually POS or NEG (empirically), we randomy assign a label to them.")
+        "a third of these are actually POS or NEG (empirically), we randomly assign a label to them.")
   }
 
   def apply(tweets: List[SystemLabeledTweet]) = {
