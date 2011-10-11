@@ -107,7 +107,7 @@ object Statistics extends Logging {
   def getEvalStats(tweets: scala.List[SystemLabeledTweet]): (Double, List[(SentimentLabel.Type, Double, Double, Double)]) = {
     val (correct, total) = tabulate(tweets)
     (accurracy(correct, total.toDouble),
-      (for (label <- List(SentimentLabel.Negative, SentimentLabel.Neutral, )) yield {
+      (for (label <- List(SentimentLabel.Negative, SentimentLabel.Neutral, SentimentLabel.Positive)) yield {
         val goldList = tweets.filter((tweet) => tweet.goldLabel == label)
         val systemList = tweets.filter((tweet) => tweet.systemLabel == label)
         val labelPrecision = precision(
