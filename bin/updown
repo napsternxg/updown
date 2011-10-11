@@ -1,11 +1,11 @@
 #!/bin/bash
 
 JARS=`echo $UPDOWN_DIR/lib/*.jar $UPDOWN_DIR/lib_managed/*/*.jar $UPDOWN_DIR/output/*.jar $UPDOWN_DIR/target/*.jar | tr ' ' ':'`
-SCALA_LIB="$UPDOWN_DIR/project/boot/scala-2.9.1/lib/scala-library.jar"
+SCALA_LIB="$HOME/.sbt/boot/scala-2.9.1/lib/scala-library.jar"
 
-CP=$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH
+CP="$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH"
 
-FIRSTARG=$1
+FIRSTARG="$1"
 
 MEMORY=2g
 
@@ -16,6 +16,8 @@ case $FIRSTARG in
 	;;
     *) ;;
 esac
+
+JAVA=$JAVA_HOME/bin/java
 
 JAVA_COMMAND="java -Xmx$MEMORY -classpath $CP"
 SCALA_COMMAND="scala -classpath $CP"
@@ -70,8 +72,8 @@ EOF
 
 
 if [ $CMD = 'build' ]; then
-
-    $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
+    #$JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
+    $JAVA -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m -Xmx512M -Xss2M -jar $UPDOWN_DIR/bin/sbt-launch-*.jar ${1+"$@"}
 
 elif [ $CMD = 'scct' ]; then
 
