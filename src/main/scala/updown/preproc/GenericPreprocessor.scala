@@ -41,7 +41,7 @@ abstract class GenericPreprocessor extends Logging {
   def main(args: Array[String]) {
     logger.debug(args.toList.toString)
     // don't forget that this is linked to the pipeStages dict below
-    val availablePipes = Set("addBiGrams", "twokenize", "twokenizeSkipGtOneGrams", "removeStopwords", "splitSpace", "filterAlpha")
+    val availablePipes = Set("lowerCase", "addBiGrams", "twokenize", "twokenizeSkipGtOneGrams", "removeStopwords", "splitSpace", "filterAlpha", "filterAlphaQuote")
 
     // PARSE ARGS
     val parser = new ArgotParser("updown run updown.preproc.PreprocStanfordTweets", preUsage = Some("Updown"))
@@ -76,11 +76,13 @@ abstract class GenericPreprocessor extends Logging {
 
       val pipeStages: Map[String, (List[String]) => List[String]] =
         Map[String, (List[String]) => List[String]](
+          ("lowerCase" -> TokenizationPipes.toLowercase),
           ("addBiGrams" -> TokenizationPipes.addNGrams(2)),
           ("twokenize" -> TokenizationPipes.twokenize),
           ("twokenizeSkipGtOneGrams" -> TokenizationPipes.twokenizeSkipGtOneGrams),
           ("removeStopwords" -> TokenizationPipes.filterOnStopset(stopSet)),
           ("filterAlpha") -> TokenizationPipes.filterOnRegex("\\p{Alpha}+"),
+          ("filterAlphaQuote") -> TokenizationPipes.filterOnRegex("(\\p{Alpha}|')+"),
           ("splitSpace" -> TokenizationPipes.splitOnDelimiter(" "))
         )
       // had to predefine the available pipes so they could be printed in the usage string, before the stopset can be parsed.

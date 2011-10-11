@@ -38,7 +38,7 @@ object NFoldMajorityTopicExperiment extends NFoldTopicExperiment {
       val neutralTopic = neutralDist(0)
         if (goodDist(0) != neutralTopic) {
           if (goodDist(0) != badDist(0)) {
-            (goodDist(0), neutralDist, badDist(0))
+            (goodDist(0), neutralTopic, badDist(0))
           } else {
             //then we have a pathological case
             logger.warn("pathological topic distribution: %s".format(labelToTopicDist.toString))

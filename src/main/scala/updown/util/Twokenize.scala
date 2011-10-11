@@ -156,8 +156,22 @@ object Twokenize {
      ).flatten
 
     // Split based on special patterns (like contractions) and check all tokens are non empty
-    zippedStr.map(splitToken(_)).flatten.filter(_.length > 0)
+    zippedStr.map(splitToken(_)).flatten.map(replaceApostrophes(_)).filter(_.length > 0)
   }  
+
+  def replaceApostrophes(str:String): String = {
+    str.replaceAll("'+","'") match {
+      case "'s"=>"is"
+      case "'m"=>"am"
+      case "n't"=>"not"
+      case "'ve"=>"have"
+      case "'re"=>"are"
+      case "'"=>""
+      case "'ll"=>"will"
+      case "'d"=>"would"
+      case x=>x
+    }
+  }
 
   // 'foo' => ' foo '
   def splitEdgePunct (input: String) = {

@@ -94,10 +94,10 @@ object Statistics extends Logging {
 
   def averageResults(results: scala.List[(Double, scala.List[(SentimentLabel.Type, Double, Double, Double)])]): (Double, scala.List[(SentimentLabel.Type, Double, Double, Double)]) = {
     var avgAccuracy = 0.0
-    var avgLabelResultsList = initializeAverageList(results(0)._2)
+    var avgLabelResultsList = initializeAverageList(results(0)._2).sortBy({case(x,_,_,_)=>SentimentLabel.ordinality(x)})
     for ((accuracy, labelResults) <- results) {
       avgAccuracy += accuracy
-      avgLabelResultsList = addAll(labelResults, avgLabelResultsList)
+      avgLabelResultsList = addAll(labelResults.sortBy({case(x,_,_,_)=>SentimentLabel.ordinality(x)}), avgLabelResultsList)
     }
     avgAccuracy /= results.length
     avgLabelResultsList = divideBy(avgLabelResultsList, results.length)
@@ -106,10 +106,8 @@ object Statistics extends Logging {
 
   def getEvalStats(tweets: scala.List[SystemLabeledTweet]): (Double, List[(SentimentLabel.Type, Double, Double, Double)]) = {
     val (correct, total) = tabulate(tweets)
-    logger.debug("goldLabels: %s".format((tweets.map((tweet) => tweet.goldLabel))))
-    logger.debug("systemLabels: %s".format((tweets.map((tweet) => tweet.systemLabel))))
     (accurracy(correct, total.toDouble),
-      (for (label <- SentimentLabel.values) yield {
+      (for (label <- List(SentimentLabel.Negative, SentimentLabel.Neutral, )) yield {
         val goldList = tweets.filter((tweet) => tweet.goldLabel == label)
         val systemList = tweets.filter((tweet) => tweet.systemLabel == label)
         val labelPrecision = precision(

@@ -22,4 +22,5 @@ object NFoldMaxentExperiment extends NFoldExperiment {
     logger.info(Statistics.reportResults(res))
     res
   }
+  def after():Int=0
 }
