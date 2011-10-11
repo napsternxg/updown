@@ -33,7 +33,7 @@ object PerTargetEvaluator {
   val NEG = "NEG"
   val NEU = "NEU"
 
-  def computeEvaluation(tweets: scala.List[SystemLabeledTweet], targets: HashMap[String, String]):
+  def computeEvaluation(tweets: scala.List[SystemLabeledTweet], targets: Map[String, String]):
   (List[(String, Double)], Int, HashMap[String, List[SystemLabeledTweet]]) = {
     val targetsToTweets = new scala.collection.mutable.HashMap[String, List[SystemLabeledTweet]] {
       override def default(s: String) = List()
@@ -64,14 +64,15 @@ object PerTargetEvaluator {
     (targetsToAccuracies, numAbstained, targetsToTweets)
   }
 
-  def apply(tweets: List[SystemLabeledTweet], targets: scala.collection.mutable.HashMap[String, String]) = {
+  def apply(tweets: List[SystemLabeledTweet], targets: Map[String, String]) = {
     val (targetsToAccuracies, numAbstained, targetsToTweets) = computeEvaluation(tweets, targets)
 
-    println("\n***** PER TARGET EVAL *****")
+
+    System.err.println("\n***** PER TARGET EVAL *****")
     if (numAbstained > 0)
-      println(numAbstained + " tweets were abstained on; assuming half (" + (numAbstained.toFloat / 2) + ") were correct.")
+      System.err.println(numAbstained + " tweets were abstained on; assuming half (" + (numAbstained.toFloat / 2) + ") were correct.")
     for ((target, accuracy) <- targetsToAccuracies) {
-      println(target + ": " + accuracy + " (" + targetsToTweets(target).length + ")")
+      System.err.println(target + ": " + accuracy + " (" + targetsToTweets(target).length + ")")
     }
   }
 
@@ -111,12 +112,17 @@ object PerTargetEvaluator {
       }
     })
 
-    val targets = new scala.collection.mutable.HashMap[String, String]
-
-    scala.io.Source.fromFile(targetsInputFile.value.get).getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+//    val targets = new scala.collection.mutable.HashMap[String, String]
+//
+//    scala.io.Source.fromFile(targetsInputFile.value.get).getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
 
     //targets.foreach(p => println(p._1+" "+p._2))
 
+    val targets: Map[String, String] =
+        (for (line <- scala.io.Source.fromFile(targetsInputFile.value.get, "UTF-8").getLines) yield {
+          val arr = line.split("|")
+          (arr(0)->arr(1))
+        }).toMap
     apply(tweets, targets)
   }
 }
