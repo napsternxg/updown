@@ -162,9 +162,11 @@ object JuntoClassifier {
     PerTweetEvaluator(systemLabeledTweets)
     PerUserEvaluator(systemLabeledTweets)
     if (targetsInputFile.value != None) {
-      val targets = new scala.collection.mutable.HashMap[String, String]
-
-      scala.io.Source.fromFile(targetsInputFile.value.get, "utf-8").getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+      val targets =
+        (for (line <- scala.io.Source.fromFile(targetsInputFile.value.get, "UTF-8").getLines) yield {
+          val arr = line.split("\\|")
+          (arr(0)->arr(1))
+        }).toMap
       PerTargetEvaluator(systemLabeledTweets, targets)
     }
 
@@ -430,9 +432,15 @@ object TransductiveJuntoClassifier {
     PerTweetEvaluator.apply(systemLabeledTestTweets)
     PerUserEvaluator.evaluate(systemLabeledTestTweets)
     if (targetsInputFile.value != None) {
-      val targets = new scala.collection.mutable.HashMap[String, String]
-
-      scala.io.Source.fromFile(targetsInputFile.value.get, "utf-8").getLines.foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+//      val targets = new scala.collection.mutable.HashMap[String, String]
+//
+//      scala.io.Source.fromFile(targetsInputFile.value.get, "utf-8").getLines
+//        .foreach(p => targets.put(p.split("\t")(0).trim, p.split("\t")(1).trim))
+      val targets: Map[String, String] =
+        (for (line <- scala.io.Source.fromFile(targetsInputFile.value.get, "UTF-8").getLines) yield {
+          val arr = line.split("\\|")
+          (arr(0)->arr(1))
+        }).toMap
       PerTargetEvaluator(systemLabeledTestTweets, targets)
     }
   }

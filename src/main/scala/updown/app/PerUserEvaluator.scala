@@ -101,14 +101,14 @@ object PerUserEvaluator {
   def evaluate(tweets: List[SystemLabeledTweet]) = {
     val (total, abstained, error, message) = computeEvaluation(tweets)
 
-    println("\n***** PER USER EVAL *****")
+    System.err.println("\n***** PER USER EVAL *****")
 
     if (abstained > 0) {
-      println(abstained + " tweets were abstained on; assuming one-third (" + (abstained / 3) + ") were positive.")
+      System.err.println(abstained + " tweets were abstained on; assuming one-third (" + (abstained / 3) + ") were positive.")
     }
-    println("Number of users evaluated: %d %s".format(total, message))
-    if (total > 0) println("Mean squared error: %f".format(error))
-    println(message)
+    System.err.println("Number of users evaluated: %d %s".format(total, message))
+    if (total > 0) System.err.println("Mean squared error: %f".format(error))
+    System.err.println(message)
   }
 
   def main(args: Array[String]) {
