@@ -10,6 +10,23 @@ import com.weiglewilczek.slf4s.Logging
 abstract class GenericPreprocessor extends Logging {
   // this is here to make ArgotConverters appear used to IDEA.
   convertString _
+  var pipeStages: Map[String, (List[String]) => List[String]] =
+    Map[String, (List[String]) => List[String]](
+      ("lowerCase" -> TokenizationPipes.toLowercase),
+      ("addBiGrams" -> TokenizationPipes.addNGrams(2)),
+      ("twokenize" -> TokenizationPipes.twokenize),
+      ("twokenizeSkipGtOneGrams" -> TokenizationPipes.twokenizeSkipGtOneGrams),
+      ("filterAlpha") -> TokenizationPipes.filterOnRegex("\\p{Alpha}+"),
+      ("filterAlphaQuote") -> TokenizationPipes.filterOnRegex("(\\p{Alpha}|')+"),
+      ("splitSpace" -> TokenizationPipes.splitOnDelimiter(" "))
+    )
+  val parser = new ArgotParser("updown run updown.preproc.PreprocStanfordTweets", preUsage = Some("Updown"))
+  val inputFile = parser.option[String](List("i", "input"), "input", "path to stanford data file")
+  val stopListFile = parser.option[String](List("s", "stoplist"), "stoplist", "path to stoplist file")
+  val startId = parser.option[Int](List("start-id"), "ID", "id at which to start numbering lines")
+  val textPipeline = parser.option[String](List("textPipeline"), "PIPELINE",
+    ("specify the desired pipe stages seperated by |: \"addBiGrams|twokenize\". " +
+      "Available options are in %s.").format(pipeStages.keySet))
 
   def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, SentimentLabel.Type, String)]
 
@@ -41,16 +58,9 @@ abstract class GenericPreprocessor extends Logging {
   def main(args: Array[String]) {
     logger.debug(args.toList.toString)
     // don't forget that this is linked to the pipeStages dict below
-    val availablePipes = Set("lowerCase", "addBiGrams", "twokenize", "twokenizeSkipGtOneGrams", "removeStopwords", "splitSpace", "filterAlpha", "filterAlphaQuote")
 
     // PARSE ARGS
-    val parser = new ArgotParser("updown run updown.preproc.PreprocStanfordTweets", preUsage = Some("Updown"))
-    val inputFile = parser.option[String](List("i", "input"), "input", "path to stanford data file")
-    val stopListFile = parser.option[String](List("s", "stoplist"), "stoplist", "path to stoplist file")
-    val startId = parser.option[Int](List("start-id"), "ID", "id at which to start numbering lines")
-    val textPipeline = parser.option[String](List("textPipeline"), "PIPELINE",
-      ("specify the desired pipe stages seperated by |: \"addBiGrams|twokenize\". " +
-        "Available options are in %s.").format(availablePipes))
+
     try {
       parser.parse(args)
 
@@ -72,21 +82,9 @@ abstract class GenericPreprocessor extends Logging {
             scala.io.Source.fromFile(fileName).getLines.toSet
           case None => Set("a", "the", ".")
         }
+      val tokpipe: (String, List[String]=>List[String]) = ("removeStopwords", TokenizationPipes.filterOnStopset(stopSet))
+      pipeStages = pipeStages + tokpipe
 
-
-      val pipeStages: Map[String, (List[String]) => List[String]] =
-        Map[String, (List[String]) => List[String]](
-          ("lowerCase" -> TokenizationPipes.toLowercase),
-          ("addBiGrams" -> TokenizationPipes.addNGrams(2)),
-          ("twokenize" -> TokenizationPipes.twokenize),
-          ("twokenizeSkipGtOneGrams" -> TokenizationPipes.twokenizeSkipGtOneGrams),
-          ("removeStopwords" -> TokenizationPipes.filterOnStopset(stopSet)),
-          ("filterAlpha") -> TokenizationPipes.filterOnRegex("\\p{Alpha}+"),
-          ("filterAlphaQuote") -> TokenizationPipes.filterOnRegex("(\\p{Alpha}|')+"),
-          ("splitSpace" -> TokenizationPipes.splitOnDelimiter(" "))
-        )
-      // had to predefine the available pipes so they could be printed in the usage string, before the stopset can be parsed.
-      assert(pipeStages.keySet == availablePipes)
 
       logger.debug("Pipeline option: %s".format(textPipeline.value))
       val pipeline: List[(List[String]) => List[String]] =
