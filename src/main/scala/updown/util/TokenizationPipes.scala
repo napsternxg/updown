@@ -12,6 +12,9 @@ object TokenizationPipes {
     else
       Twokenize(s)).flatten
 
+  val basicTokenize: (List[String]) => List[String] =
+    (ss) => ss.map((s)=>BasicTokenizer(s)).flatten
+
   val toLowercase: (List[String]) => List[String] =
     (ss) => ss.map((s) => s.toLowerCase)
 

@@ -2,7 +2,7 @@ package updown.util
 
 
 import com.weiglewilczek.slf4s.Logging
-import java.io.{BufferedWriter, File}
+import java.io.{IOException, BufferedWriter, File}
 
 object WordleUtils extends Logging {
 
@@ -28,14 +28,18 @@ object WordleUtils extends Logging {
       if (sourceFile.isFile) {
         val sourcePath = sourceFile.getAbsolutePath
         val destPath = sourcePath + ".png"
-        if (htmlOutputWriter.isDefined){
+        if (htmlOutputWriter.isDefined) {
           htmlOutputWriter.get.write("<div class=wordle><span class=name>%s</span><img src=\"%s\"/></div>".format(sourceFile.getName, destPath))
         }
 
         logger.debug(sourceFile.getAbsolutePath() + " exists.");
         val command = makeWordlesCommand(jarPath, configPath, sourcePath, destPath);
         logger.debug("Spawning: " + command);
-        children = Runtime.getRuntime().exec(command) :: children
+        try {
+          children = Runtime.getRuntime().exec(command) :: children
+        } catch {
+          case s: IOException => logger.error("couldn't launch wordle program. Probably, out of memory.")
+        }
       } else {
         logger.error("%s is not a file".format(topicFile))
       }

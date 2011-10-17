@@ -8,6 +8,7 @@ object SentimentLabel extends Enumeration{
   val Negative = Value("-1")
   val Negative2 = Value("-2")
   val Abstained = Value("A")
+  val Unknown = Value("U")
   // this is the end of the enum definition. the rest of this object just demonstrates other
   //  stuff you can do.
 
@@ -17,6 +18,7 @@ object SentimentLabel extends Enumeration{
   private val _NEG_NAME2 = "superNegative"
   private val _NEU_NAME = "neutral"
   private val _ABS_NAME = "abstained"
+  private val _UNK_NAME = "unknown"
 
   def unitSentiment(label:SentimentLabel.Type) = {
     label match {
@@ -45,6 +47,7 @@ object SentimentLabel extends Enumeration{
       case Negative2 => _NEG_NAME2
       case Neutral  => _NEU_NAME
       case Abstained  => _ABS_NAME
+      case Unknown  => _UNK_NAME
     }
   }
 
@@ -56,10 +59,12 @@ object SentimentLabel extends Enumeration{
       case `_NEG_NAME2` => Negative2
       case `_NEU_NAME` => Neutral
       case `_ABS_NAME` => Abstained
+      case `_UNK_NAME` => Unknown
     }
   }
 
   def figureItOut(name:String) = {
+    try {
     name.toLowerCase match {
       case `_POS_NAME` |"pos"|"p"|"+"|"1" => Positive
       case `_POS_NAME2` |"pos2"|"2" => Positive2
@@ -67,6 +72,12 @@ object SentimentLabel extends Enumeration{
       case `_NEG_NAME2`|"neg2"|"-2" => Negative2
       case `_NEU_NAME`|"neu"|"neut"|"0" => Neutral
       case `_ABS_NAME` => Abstained
+      case `_UNK_NAME` => Unknown
+    }
+    } catch {
+      case e:scala.MatchError =>
+        System.err.println("couldn't figure out: \"%s\"".format(name))
+        throw e
     }
   }
 }

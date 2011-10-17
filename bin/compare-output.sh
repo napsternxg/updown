@@ -13,6 +13,8 @@ The available sets of experiments are:
 EOF
 }
 
+export CP_CONFIG=$UPDOWN_DIR/config/quiet
+
 OUT=~/.updown_output
 mkdir -p $OUT
 OUTPUT=$OUT/output
