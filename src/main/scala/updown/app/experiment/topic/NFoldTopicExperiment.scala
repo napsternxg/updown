@@ -110,8 +110,12 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
       numTopics = numTopicsOption.value.get
     }
 
+    // Thanks to a bug in Mallet, we have to cap alphaSum
+    val alphaSum = 300 min (alpha * numTopics)
 
-    val model: TopicModel = new LDATopicModel(trainSet, numTopics, iterations, alpha * numTopics, beta)
+
+    logger.debug("alphaSum: " + alphaSum)
+    val model: TopicModel = new LDATopicModel(trainSet, numTopics, iterations, alphaSum, beta)
     logger.debug("topic distribution:\n     :" + model.getTopicPriors)
     logger.debug({
       val labelToTopicDist = model.getTopicsPerTarget

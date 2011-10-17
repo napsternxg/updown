@@ -1,9 +1,11 @@
 #!/bin/bash
 
-JARS=`echo $UPDOWN_DIR/lib/*.jar $UPDOWN_DIR/lib_managed/*/*.jar $UPDOWN_DIR/output/*.jar $UPDOWN_DIR/target/*.jar | tr ' ' ':'`
+CP_CONFIG=${CP_CONFIG:-$UPDOWN_DIR/config/main}
+
+JARS=`echo $UPDOWN_DIR/lib/*.jar $UPDOWN_DIR/lib_managed/*/*.jar $UPDOWN_DIR/lib_managed/*/*/*.jar $UPDOWN_DIR/lib_managed/*/*/*/*.jar $UPDOWN_DIR/output/*.jar $UPDOWN_DIR/target/*.jar | tr ' ' ':'`
 SCALA_LIB="$HOME/.sbt/boot/scala-2.9.1/lib/scala-library.jar"
 
-CP="$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH:$UPDOWN_DIR/config"
+CP="$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH:$CP_CONFIG"
 
 FIRSTARG="$1"
 
@@ -82,15 +84,15 @@ elif [ $CMD = 'scct' ]; then
 
 elif [ $CMD = 'preproc-stanford' ]; then
 
-     $SCALA_COMMAND updown.preproc.PreprocStanfordTweets $*
+     $SCALA_COMMAND updown.preproc.impl.PreprocStanfordTweets $*
 
 elif [ $CMD = 'preproc-shamma' ]; then
 
-     $SCALA_COMMAND updown.preproc.PreprocShammaTweets $*
+     $SCALA_COMMAND updown.preproc.impl.PreprocShammaTweets $*
 
 elif [ $CMD = 'preproc-hcr' ]; then
 
-     $SCALA_COMMAND updown.preproc.PreprocHCRTweets $*
+     $SCALA_COMMAND updown.preproc.impl.PreprocHCRTweets $*
 
 elif [ $CMD = 'per-tweet-eval' ]; then
 
