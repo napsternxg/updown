@@ -13,7 +13,7 @@ object PreprocShammaTweets {
 
   val parser = new ArgotParser("updown preproc-shamma", preUsage=Some("Updown"))
   
-  val inputFile = parser.option[String](List("i","input"),"input", "path to shamma's Obama-McCain debate data file")
+  val inputFile = parser.option[String](List("i","input"),"input", "path to Shamma's Obama-McCain debate data file")
   val stopListFile =  parser.option[String](List("s","stoplist"),"stoplist", "path to stoplist file")
   
   val lineRE = """^(\d+)\t[^\t]+\t([^\t]+)\t([^\t]+)\t[^\t]*\t(.*)$""".r
