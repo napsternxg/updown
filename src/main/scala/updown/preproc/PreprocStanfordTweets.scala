@@ -20,20 +20,21 @@ object PreprocStanfordTweets {
 
   val lineRE = """^(\d+);;(\d+);;[^;]+;;[^;]+;;([^;]+);;(.*)$""".r
 
-  // TODO: verify the meanings of these values
   val STAN_POS = "4"
   val STAN_NEU = "2"
   val STAN_NEG = "0"
 
   def processOneLine(line: String, stoplist: Set[String]): Any = {
     val lineRE(sentimentRaw, tweetid, username, tweet) = line
-    if (sentimentRaw == STAN_POS || sentimentRaw == STAN_NEG) {
-      val tokens = BasicTokenizer(tweet)
-      val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
-      val label = if (sentimentRaw == STAN_POS) SentimentLabel.Positive else SentimentLabel.Negative
-
-      SuccessfulStanfordParse(tweetid, username, label, features)
+    val tokens = BasicTokenizer(tweet)
+    val features = tokens.filterNot(stoplist(_)) ::: StringUtil.generateBigrams(tokens)
+    val label = sentimentRaw match {
+      case STAN_POS => SentimentLabel.Positive
+      case STAN_NEU => SentimentLabel.Neutral
+      case STAN_NEG => SentimentLabel.Negative
     }
+
+    SuccessfulStanfordParse(tweetid, username, label, features)
   }
 
   def main(args: Array[String]) {
@@ -45,7 +46,7 @@ object PreprocStanfordTweets {
     }
 
     if (inputFile.value == None) {
-      println("You must specify a input data file via -i ")
+      println("You must specify an input data file via -i ")
       sys.exit(0)
     }
     if (stopListFile.value == None) {
@@ -58,17 +59,25 @@ object PreprocStanfordTweets {
 
     var numTweets = 0
     var numPos = 0
+    var numNeg = 0
+    var numNeu = 0
     for (line <- lines) {
       processOneLine(line, stoplist) match {
         case SuccessfulStanfordParse(tweetid, username, label, features) =>
           numTweets += 1
-          if (label == SentimentLabel.Positive)
-            numPos += 1
+          label match {
+            case SentimentLabel.Positive => numPos += 1
+            case SentimentLabel.Negative => numNeg += 1
+            case SentimentLabel.Neutral => numNeu += 1
+          }
           printf("%s|%s|%s|%s\n", tweetid, username, features.mkString(",").replace("|", ""), label.toString)
         case _ => ()
       }
     }
 
-    System.err.println("Preprocessed " + numTweets + " tweets. Fraction positive: " + (numPos.toFloat / numTweets))
+    System.err.println("Preprocessed " + numTweets + " tweets.")
+    System.err.println("Fraction positive: " + (numPos.toFloat / numTweets))
+    System.err.println("Fraction negative: " + (numNeg.toFloat / numTweets))
+    System.err.println("Fraction neutral: " + (numNeu.toFloat / numTweets))
   }
 }
