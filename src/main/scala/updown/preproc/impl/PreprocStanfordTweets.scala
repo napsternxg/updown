@@ -20,7 +20,6 @@ object PreprocStanfordTweets extends GenericPreprocessor {
   val STAN_NEG = "0"
 
   override val defaultPipeline = "basicTokenize|addBigrams|removeStopwords"
-
   def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
     for (line <- scala.io.Source.fromFile(fileName, "UTF-8").getLines) yield {
       val lineRE(sentimentRaw, id, username, tweet) = line

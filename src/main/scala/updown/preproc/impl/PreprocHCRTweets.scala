@@ -22,12 +22,12 @@ object PreprocHCRTweets extends GenericPreprocessor {
     labelInfo match {
       case sentiment :: target :: _ :: _ :: _ :: rest =>
         val label =
-        sentiment match {
-          case `HCR_POS` => SentimentLabel.Positive
-          case `HCR_NEG` => SentimentLabel.Negative
-          case `HCR_NEU` => SentimentLabel.Neutral
-          case _ => SentimentLabel.Abstained
-        }
+          sentiment match {
+            case `HCR_POS` => SentimentLabel.Positive
+            case `HCR_NEG` => SentimentLabel.Negative
+            case `HCR_NEU` => SentimentLabel.Neutral
+            case _ => SentimentLabel.Abstained
+          }
         getTargetToLabelMap(rest) + ((target, label))
       case Nil => Nil.toMap
     }
@@ -40,7 +40,7 @@ object PreprocHCRTweets extends GenericPreprocessor {
     fields = reader.readNext()
     var lines = List[List[String]]()
     while (fields != null) {
-      lines = fields.toList.map((s)=>s.trim) :: lines
+      lines = fields.toList.map((s) => s.trim) :: lines
       fields = reader.readNext()
     }
     lines = lines.reverse
