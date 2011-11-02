@@ -16,7 +16,6 @@ object PreprocShammaTweets extends GenericPreprocessor {
 
   override val defaultPipeline = "basicTokenize|addBigrams|removeStopwords"
 
-
   def getSingleRating(ratings: List[String]): SentimentLabel.Type = {
     // we only consider tweets that were evaluated by 3 or more annotators
     if (ratings.length >= 3) {
@@ -42,7 +41,6 @@ object PreprocShammaTweets extends GenericPreprocessor {
 
       if (!line.startsWith("#") && roughTokens.length >= 8 && line.length > 0 && Character.isDigit(line(0))) {
         val lineRE(id, tweet, username, ratingsRaw) = line
-
         val label = getSingleRating(ratingRE.findAllIn(ratingsRaw).toList)
         logger.debug("id:%s label:%s".format(id, SentimentLabel.toEnglishName(label)))
         (id, username, Left(label), tweet)
