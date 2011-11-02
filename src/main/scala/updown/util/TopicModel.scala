@@ -31,4 +31,6 @@ abstract class TopicModel {
   def getTopicsPerInstance: List[(String,List[Double])]
   def getTopicsPerTarget: Map[SentimentLabel.Type,List[Double]]
   def inferTopics(tweet: GoldLabeledTweet): List[Double]
+
+  def save(filename: String)
 }

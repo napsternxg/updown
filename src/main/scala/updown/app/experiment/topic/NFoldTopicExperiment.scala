@@ -1,12 +1,12 @@
 package updown.app.experiment.topic
 
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
-import updown.app.experiment.NFoldExperiment
 import org.clapper.argot.{SingleValueOption, ArgotParser}
 import org.clapper.argot.ArgotParser._
 import org.clapper.argot.ArgotConverters._
 import java.io.{FileWriter, BufferedWriter, File}
 import updown.util.{WordleUtils, Statistics, LDATopicModel, TopicModel}
+import updown.app.experiment.{ExperimentalResult, NFoldExperiment}
 
 abstract class NFoldTopicExperiment extends NFoldExperiment {
   var iterations = 1000
@@ -30,8 +30,7 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
   val wordleConfigOption = parser.option[String](List("wordleConfig"), "PATH", ("the path to the config file for IBM's " +
     "word cloud generator (default %s)").format(WordleUtils.defaultConfigurationPath))
 
-  def evaluate(model: TopicModel, testSet: scala.List[GoldLabeledTweet]):
-  (Double, scala.List[(SentimentLabel.Type, Double, Double, Double)])
+  def evaluate(model: TopicModel, testSet: scala.List[GoldLabeledTweet]): ExperimentalResult
 
   def doOutput(model: TopicModel) {
     if (outputOption.value.isDefined) {

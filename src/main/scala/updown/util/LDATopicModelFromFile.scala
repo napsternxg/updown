@@ -4,19 +4,14 @@ import cc.mallet.topics.ParallelTopicModel
 import cc.mallet.types._
 import scala.collection.JavaConversions._
 import updown.data.{SentimentLabel, GoldLabeledTweet}
-import java.util.logging.Level
 import java.io.File
 
-class LDATopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIterations: Int, alphaSum: Double, beta: Double) extends TopicModel {
-  private final val MAX_THREADS = 20
+class LDATopicModelFromFile(fileName: String) extends TopicModel {
 
-  private val (alphabet, instanceList) = getInstanceList(tweets)
-  private var model = new ParallelTopicModel(numTopics, alphaSum, beta)
-  model.addInstances(instanceList)
-  model.setNumThreads(numTopics max MAX_THREADS)
-  model.setNumIterations(numIterations)
-//  ParallelTopicModel.logger.setLevel(Level.OFF)
-  model.estimate()
+  private var model = ParallelTopicModel.read(new File(fileName))
+  private val alphabet = model.alphabet
+  private val numTopics = model.numTopics
+  private val numIterations = model.numIterations
 
   def getTopics: List[Topic] = {
     val priors = getTopicPriors
