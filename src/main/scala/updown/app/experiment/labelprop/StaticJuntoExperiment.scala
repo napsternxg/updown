@@ -95,10 +95,9 @@ object StaticJuntoExperiment extends StaticExperiment {
 
     (for (tweet <- tweets) yield {
       val result = model.eval(tweet.features.toArray)
-
       val posProb = if (posIndex >= 0) result(posIndex) else 0.0
       val negProb = if (negIndex >= 0) result(negIndex) else 0.0
-      val neuProb = if (neuIndex >= 0) result(neuIndex) else 0.0
+      val neuProb = if (neuIndex >= 0) result(neuIndex) else 0.5
 
       new Label(TWEET_ + tweet.id, POS, posProb) :: new Label(TWEET_ + tweet.id, NEG, negProb) :: new Label(TWEET_ + tweet.id, NEU, neuProb) :: Nil
     }).flatten
@@ -134,11 +133,11 @@ object StaticJuntoExperiment extends StaticExperiment {
       (for (emo <- negEmoticons) yield {
         new Label(NGRAM_ + emo, NEG, BIG) ::
           new Label(NGRAM_ + emo, POS, BIG_COMP) :: Nil
-      }).toList.flatten :::
+      }).toList.flatten/* :::
       (for (emo <- negEmoticons) yield {
         new Label(NGRAM_ + emo, NEG, BIG) ::
           new Label(NGRAM_ + emo, POS, BIG_COMP) :: Nil
-      }).toList.flatten
+      }).toList.flatten*/
   }
 
   def createGraph(tweets: List[GoldLabeledTweet], followerGraphFile: String, model: AbstractModel, lexicon: MPQALexicon, edgeSeedSet: String, getNgramWeight: (String) => Double) = {
@@ -220,6 +219,7 @@ object StaticJuntoExperiment extends StaticExperiment {
     val tweetIdsToPredictedLabels = new scala.collection.mutable.HashMap[String, SentimentLabel.Type]
 
 
+
     logger.debug("testing model")
     val ngramsToPositivity = new scala.collection.mutable.HashMap[String, Double]
     val ngramsToNegativity = new scala.collection.mutable.HashMap[String, Double]
@@ -234,14 +234,15 @@ object StaticJuntoExperiment extends StaticExperiment {
         val posProb = predictions.get(POS)
         val negProb = predictions.get(NEG)
         val neuProb = predictions.get(NEU)
+        val maxProb = math.max(posProb, math.max(negProb, neuProb))
 
         tweetIdsToPredictedLabels(nodeName) =
-          if (posProb >= negProb && posProb >= neuProb)
-            SentimentLabel.Positive
-          else if (negProb >= posProb && negProb >= neuProb)
-            SentimentLabel.Negative
-          else
+          if (neuProb == maxProb)
             SentimentLabel.Neutral
+          else if (posProb == maxProb)
+            SentimentLabel.Positive
+          else
+            SentimentLabel.Negative
       }
       else if (topNOutputFile.value != None && nodeType == NGRAM_ && !lexicon.contains(nodeName)
         && getNgramWeight(nodeName) >= 1.0 && thisCorpusNgramProbs(nodeName) * getWordCount(tweets) >= 5.0) {
@@ -256,6 +257,11 @@ object StaticJuntoExperiment extends StaticExperiment {
 
       }
     }
+    logger.info("predicted nPos:%d nNeg:%d nNeu:%d".format(
+    tweetIdsToPredictedLabels.count(i=>i._2==SentimentLabel.Positive),
+    tweetIdsToPredictedLabels.count(i=>i._2==SentimentLabel.Negative),
+    tweetIdsToPredictedLabels.count(i=>i._2==SentimentLabel.Neutral)
+    ))
     val res = for (tweet <- tweets) yield {
 
       tweet match {
