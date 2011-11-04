@@ -18,6 +18,7 @@ object PreprocEmoticonTweets {
   val parser = new ArgotParser("updown run updown.preproc.PreprocEmoticonTweets", preUsage = Some("Updown"))
   val inputPositiveFile = parser.option[String](List("p", "positive"), "positive", "text file with positive emoticons")
   val inputNegativeFile = parser.option[String](List("n", "negative"), "negative", "text file with negative emoticons")
+  val inputNeutralFile = parser.option[String](List("u", "neutral"), "neutral", "text file with neutral tweets")
   val outputFile = parser.option[String](List("o", "output"), "ouput", "feature file output")
   val stopListFile = parser.option[String](List("l", "stoplist"), "stoplist", "stoplist words")
   val dictFile = parser.option[String](List("d", "dictionary"), "dictionary", "a dictionary-this is actually just a list of words in the language")
@@ -64,12 +65,9 @@ object PreprocEmoticonTweets {
 
     preprocFile(inputPositiveFile.value.get, SentimentLabel.Positive, out, stoplist, engDict, countTopN) //happy
     preprocFile(inputNegativeFile.value.get, SentimentLabel.Negative, out, stoplist, engDict, countTopN) //sad
+    if(inputNeutralFile.value != None)
+      preprocFile(inputNeutralFile.value.get, SentimentLabel.Neutral, out, stoplist, engDict, countTopN) // neutral
 
-    /*
-    *
-    *I have no idea what a neutral emoticon is
-    */
-    //preprocFile(args(2), SentimentLabel.Neutral, out, stoplist, engDict, countTopN)
 
     if (countTopN) {
       val topNOut = new OutputStreamWriter(new FileOutputStream(countArg.value.get), "utf-8")
@@ -96,7 +94,8 @@ object PreprocEmoticonTweets {
         for (feature <- features) out.write(feature + ",")
         out.write(label + "\n")
       }
-      if (isArabic(tokens, engDict)) {
+      // Why are we passing engDict to isArabic? Commenting this out for now...
+      /*if (isArabic(tokens, engDict)) {
         val bigrams = StringUtil.generateBigrams(tokens)
 
         val unigrams = tokens.filterNot(stoplist(_))
@@ -105,7 +104,7 @@ object PreprocEmoticonTweets {
 
         for (feature <- features) out.write(feature + ",")
         out.write(label + "\n")
-      }
+      }*/
     }
   }
 

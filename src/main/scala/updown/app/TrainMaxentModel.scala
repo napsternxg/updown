@@ -15,8 +15,11 @@ import updown.data.io.TweetFeatureReader
 
 /**
  * Train a maxent model from labeled tweet input where each line has the format:
- * TWEET_ID|USER_ID|feature1,feature2,feature3,...,featureN,label
+ * TWEET_ID|USER_ID|feature1,feature2,feature3,...,featureN|label
  *
+ * or, using the -s flag, train from a simple file that has the format:
+ * feature1,feature2,feature3,...,featureN,label
+ * 
  * @author Mike Speriosu
  */
 object TrainMaxentModel {
@@ -31,6 +34,14 @@ object TrainMaxentModel {
     GIS.trainModel(MaxentEventStreamFactory(fileName), iterations, cutoff)
 
   def apply(fileName: String): AbstractModel = apply(fileName, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
+
+  def trainSimple(fileName: String, iterations: Int, cutoff: Int): AbstractModel = {
+    val reader = new BufferedReader(new FileReader(fileName))
+    val dataStream = new PlainTextByLineDataStream(reader)
+    val eventStream = new BasicEventStream(dataStream, ",")
+
+    GIS.trainModel(eventStream, iterations, cutoff)
+  }
 
   def trainWithStringIterator(iterator: Iterator[String], iterations: Int, cutoff: Int): AbstractModel =
     GIS.trainModel(MaxentEventStreamFactory.getWithStringIterator(iterator), iterations, cutoff)
@@ -48,6 +59,8 @@ object TrainMaxentModel {
     val outputFile = parser.option[String](List("m", "output"), "output", "model output") //Matt votes to change abbrev from "m" to "o"...
     val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations (default = " + DEFAULT_ITERATIONS + ")")
     val cutoff = parser.option[Int](List("c", "cutoff"), "cutoff", "number of times a feature must be seen to be used (default = " + DEFAULT_CUTOFF + ")")
+    val simple = parser.option[String](List("s", "simple"), "simple", "read tweets in simple format, without userid and tweetid")
+
     try {
       parser.parse(args)
     }
@@ -65,10 +78,10 @@ object TrainMaxentModel {
     }
 
 
-    val model: AbstractModel = apply(
-      inputFile.value.get,
-      iterations.value.getOrElse(DEFAULT_ITERATIONS),
-      cutoff.value.getOrElse(DEFAULT_CUTOFF))
+    val model: AbstractModel = if(simple.value == None)
+      apply(inputFile.value.get,iterations.value.getOrElse(DEFAULT_ITERATIONS), cutoff.value.getOrElse(DEFAULT_CUTOFF))
+    else
+      trainSimple(inputFile.value.get,iterations.value.getOrElse(DEFAULT_ITERATIONS), cutoff.value.getOrElse(DEFAULT_CUTOFF))
 
     val modelWriter = new BinaryGISModelWriter(model, new File(outputFile.value.get))
     modelWriter.persist()

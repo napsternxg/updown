@@ -21,3 +21,18 @@ object TweetFeatureReader {
     GoldLabeledTweet(tweetid, userid, features, SentimentLabel.figureItOut(label))
   }
 }
+
+/*object RawTweetFeatureReader {
+  val featureRowRE = """^([^|]*)\|([^|]*)\|([^|]*)\|(.*)$""".r
+
+  def apply(inputFile: String): List[GoldLabeledTweet] = {
+
+    val lines = scala.io.Source.fromFile(inputFile, "utf-8").getLines.toList
+
+    for (line <- lines) yield {
+      parseLine(line: String): GoldLabeledTweet = {
+        
+      }
+    }
+  }
+*/
