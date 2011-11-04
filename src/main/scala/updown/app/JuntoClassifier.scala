@@ -149,6 +149,11 @@ object JuntoClassifier {
       }
     }
 
+    System.err.println("predicted nPos:%d nNeg:%d nNeu:%d".format(
+    tweetIdsToPredictedLabels.count(i=>i._2==SentimentLabel.Positive),
+    tweetIdsToPredictedLabels.count(i=>i._2==SentimentLabel.Negative),
+    tweetIdsToPredictedLabels.count(i=>i._2==SentimentLabel.Neutral)
+    ))
     val systemLabeledTweets =
       for (GoldLabeledTweet(id, userid, features, goldLabel) <- goldLabeledTweets) yield {
         SystemLabeledTweet(id, userid, features, goldLabel,
@@ -372,7 +377,8 @@ object TransductiveJuntoClassifier {
   val refCorpusProbsFile = parser.option[String](List("r", "reference-corpus-probabilities"), "ref-corp-probs", "reference corpus probabilities input file")
 
   val edgeSeedSetOption = parser.option[String](List("e", "edge-seed-set-selection"), "edge-seed-set-selection", "edge/seed set selection")
-  val targetsInputFile = parser.option[String](List("t", "targets"), "targets", "targets")
+  val targetsInputFile = parser.option[String](List("t", "targets"), "targets", "targets (TRAIN)")
+  val targetsInputFileTest = parser.option[String](List("u", "targets-test"), "targets", "targets (TEST)")
 
   val mu1 = parser.option[Double](List("u", "mu1"), "mu1", "seed injection probability")
   val iterations = parser.option[Int](List("n", "iterations"), "iterations", "number of iterations")

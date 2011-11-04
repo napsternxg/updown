@@ -14,7 +14,10 @@ abstract class Experiment extends Logging {
     logger.info("Overall:\n" + Statistics.getEvalStats("", labeledTweets).toString)
 
     val (msePerUser, nUsers) = Statistics.getMSEPerUser(labeledTweets)
-    logger.info("Per-user Summary:\nN users:%d\n%s\n%s".format(nUsers, "%15s %5s".format("Label","MSE"),msePerUser.map{case LabelResult(_,label,_,_,_,mse)=>"%15s %.3f".format(SentimentLabel.toEnglishName(label),mse)}.mkString("\n")))
+    logger.info("Per-user Summary:\nN users:%d\n%s\n%s".format(nUsers, "%15s %5s %7s".format("Label", "MSE", "√(MSE)"),
+      msePerUser.map {
+        case (label, mse) => "%15s %.3f   %.3f".format(SentimentLabel.toEnglishName(label), mse, math.sqrt(mse))
+      }.mkString("\n")))
 
     targetsInputFile.value match {
       case Some(filename) =>
@@ -29,9 +32,9 @@ abstract class Experiment extends Logging {
             TargetedSystemLabeledTweet(id, uid, features, gLabel, sLabel, targets(id))
         }
         val (statsPerTarget, nTargets) = Statistics.getEvalStatsPerTarget("", targetedTweets)
-        if (statsPerTarget.length > 0){
+        if (statsPerTarget.length > 0) {
           logger.info("Per-target:\nN targets: %d\n%s".format(nTargets, statsPerTarget.mkString("\n")))
-        }else
+        } else
           logger.info("Per-target: No targets were over the threshold")
       case None =>
         logger.info("Per-target: No target file provided")
