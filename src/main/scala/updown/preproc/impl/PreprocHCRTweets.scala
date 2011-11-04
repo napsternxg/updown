@@ -29,7 +29,7 @@ object PreprocHCRTweets extends GenericPreprocessor {
             case _ => SentimentLabel.Abstained
           }
         getTargetToLabelMap(rest) + ((target, label))
-      case Nil => Nil.toMap
+      case _ => Nil.toMap
     }
   }
 

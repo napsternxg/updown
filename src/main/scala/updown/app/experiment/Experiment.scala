@@ -1,10 +1,10 @@
 package updown.app.experiment
 
 import updown.util.Statistics
-import updown.data.{TargetedSystemLabeledTweet, SystemLabeledTweet}
 import org.clapper.argot.{ArgotParser, SingleValueOption}
 import org.clapper.argot.ArgotConverters._
 import com.weiglewilczek.slf4s.Logging
+import updown.data.{SentimentLabel, TargetedSystemLabeledTweet, SystemLabeledTweet}
 
 abstract class Experiment extends Logging {
   val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Updown"))
@@ -12,12 +12,9 @@ abstract class Experiment extends Logging {
 
   def report(labeledTweets: List[SystemLabeledTweet]) {
     logger.info("Overall:\n" + Statistics.getEvalStats("", labeledTweets).toString)
-    val statsPerUser: List[ExperimentalResult] = Statistics.getEvalStatsPerUser("", labeledTweets)
-    logger.info("Per-user Summary:\n"+Statistics.mean(statsPerUser)+"\n"+Statistics.variance(statsPerUser))
-    if (statsPerUser.length > 0)
-      logger.debug("Per-user:\n" + statsPerUser.mkString("\n"))
-    else
-      logger.info("Per-user: No users were over the threshold.")
+
+    val (msePerUser, nUsers) = Statistics.getMSEPerUser(labeledTweets)
+    logger.info("Per-user Summary:\nN users:%d\n%s\n%s".format(nUsers, "%15s %5s".format("Label","MSE"),msePerUser.map{case LabelResult(_,label,_,_,_,mse)=>"%15s %.3f".format(SentimentLabel.toEnglishName(label),mse)}.mkString("\n")))
 
     targetsInputFile.value match {
       case Some(filename) =>
@@ -31,11 +28,9 @@ abstract class Experiment extends Logging {
           case SystemLabeledTweet(id, uid, features, gLabel, sLabel) =>
             TargetedSystemLabeledTweet(id, uid, features, gLabel, sLabel, targets(id))
         }
-        val statsPerTarget: List[ExperimentalResult] = Statistics.getEvalStatsPerTarget("", targetedTweets)
+        val (statsPerTarget, nTargets) = Statistics.getEvalStatsPerTarget("", targetedTweets)
         if (statsPerTarget.length > 0){
-          logger.info("Per-target Summary:\n"+Statistics.mean(statsPerTarget)+"\n"+Statistics.variance(statsPerTarget))
-
-          logger.debug("Per-target:\n" + statsPerTarget.mkString("\n"))
+          logger.info("Per-target:\nN targets: %d\n%s".format(nTargets, statsPerTarget.mkString("\n")))
         }else
           logger.info("Per-target: No targets were over the threshold")
       case None =>

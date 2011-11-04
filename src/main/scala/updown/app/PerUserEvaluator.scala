@@ -38,7 +38,9 @@ object PerUserEvaluator {
 
   def computeEvaluation(tweets: scala.List[SystemLabeledTweet]): (Int, Int, Double, String) = {
     var totalError = 0.0;
-    var totalErrorAlt = 0.0
+    var totalErrorPos = 0.0
+    var totalErrorNeg = 0.0
+    var totalErrorNeu = 0.0
     var totalNumAbstained = 0
     val usersToTweets = new scala.collection.mutable.HashMap[String, List[Tweet]] {
       override def default(s: String) = List()
@@ -50,49 +52,61 @@ object PerUserEvaluator {
 
     val usersToTweetsFiltered = usersToTweets.filter(p => p._2.length >= minTPU)
 
-    for (userid <- usersToTweetsFiltered.keys) {
-      val curTweets = usersToTweetsFiltered(userid)
+    var nusers = 0
+    var nutweets = 0
+    for ((userid, curTweets) <- usersToTweetsFiltered) {
+      nusers += 1
 
       var numAbstained = 0
-      if (curTweets.length >= minTPU) {
-        var numGoldPos = 0.0;
-        var numSysPos = 0.0
-        var numGoldNeg = 0.0;
-        var numSysNeg = 0.0
-        var numGoldNeu = 0.0;
-        var numSysNeu = 0.0
+      var numGoldPos = 0.0;
+      var numSysPos = 0.0
+      var numGoldNeg = 0.0;
+      var numSysNeg = 0.0
+      var numGoldNeu = 0.0;
+      var numSysNeu = 0.0
 
-        for (tweet <- curTweets) {
-          tweet match {
-            case SystemLabeledTweet(_, _, _, SentimentLabel.Positive, _) => numGoldPos += 1
-            case SystemLabeledTweet(_, _, _, SentimentLabel.Negative, _) => numGoldNeg += 1
-            case SystemLabeledTweet(_, _, _, SentimentLabel.Neutral, _) => numGoldNeu += 1
-          }
-          if (doRandom == None) {
-            tweet match {
-              case SystemLabeledTweet(_, _, _, _, SentimentLabel.Positive) => numSysPos += 1
-              case SystemLabeledTweet(_, _, _, _, SentimentLabel.Negative) => numSysNeg += 1
-              case SystemLabeledTweet(_, _, _, _, SentimentLabel.Neutral) => numSysNeu += 1
-              case SystemLabeledTweet(_, _, _, _, null) => numAbstained += 1
-            }
-          } else {
-            numAbstained += 1
-          }
+      for (tweet <- curTweets) {
+        nutweets += 1
+        tweet match {
+          case SystemLabeledTweet(_, _, _, SentimentLabel.Positive, _) => numGoldPos += 1
+          case SystemLabeledTweet(_, _, _, SentimentLabel.Negative, _) => numGoldNeg += 1
+          case SystemLabeledTweet(_, _, _, SentimentLabel.Neutral, _) => numGoldNeu += 1
         }
-
-        numSysPos += numAbstained.toFloat / 3
-        /*if(doRandom.value != None) {
-          numSysPos = numGoldPos / 2
-          numAbstained = 0
-        }*/
-        totalError += math.pow(((numGoldPos + numGoldNeg + numGoldNeu) - (numSysPos + numSysNeg + numSysNeu)) / curTweets.length, 2)
-        totalErrorAlt += math.pow(((numGoldPos) - (numSysPos)) / curTweets.length, 2)
-        totalNumAbstained += numAbstained
+        if (doRandom == None) {
+          tweet match {
+            case SystemLabeledTweet(_, _, _, _, SentimentLabel.Positive) => numSysPos += 1
+            case SystemLabeledTweet(_, _, _, _, SentimentLabel.Negative) => numSysNeg += 1
+            case SystemLabeledTweet(_, _, _, _, SentimentLabel.Neutral) => numSysNeu += 1
+            //              case SystemLabeledTweet(_, _, _, _, null) => numAbstained += 1
+            case _ => numAbstained += 1
+          }
+        } else {
+          numAbstained += 1
+        }
       }
+
+      //        numSysPos += numAbstained.toFloat / 3
+
+
+      /*if(doRandom.value != None) {
+        numSysPos = numGoldPos / 2
+        numAbstained = 0
+      }*/
+      totalError += math.pow(((numGoldPos + numGoldNeg + numGoldNeu) - (numSysPos + numSysNeg + numSysNeu)) / curTweets.length, 2)
+      totalErrorPos += math.pow(((numGoldPos) - (numSysPos)) / curTweets.length, 2)
+      totalErrorNeg += math.pow(((numGoldNeg) - (numSysNeg)) / curTweets.length, 2)
+      totalErrorNeu += math.pow(((numGoldNeu) - (numSysNeu)) / curTweets.length, 2)
+      totalNumAbstained += numAbstained
+      println("uid:%s abs:%d gP:%f sP:%f gN:%f sN:%f gn:%f sn:%f n:%d".format(userid, numAbstained, numGoldPos, numSysPos, numGoldNeg, numSysNeg, numGoldNeu, numSysNeu, curTweets.length))
     }
 
     totalError /= usersToTweetsFiltered.size
-    totalErrorAlt /= usersToTweetsFiltered.size
+    totalErrorPos /= usersToTweetsFiltered.size
+    totalErrorNeg /= usersToTweetsFiltered.size
+    totalErrorNeu /= usersToTweetsFiltered.size
+
+    System.out.println("pos:%f neg:%f neu:%f".format(totalErrorPos, totalErrorNeg, totalErrorNeu))
+    println("tweets:%d users:%d utweets: %d".format(tweets.length, nusers, nutweets))
 
     (usersToTweetsFiltered.size, totalNumAbstained, totalError,
       "(min of " + minTPU + " tweets per user)")
