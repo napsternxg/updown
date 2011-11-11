@@ -59,7 +59,7 @@ object TopicalChunker extends Logging {
       summary.write("%s\n".format(model.getTopicPriors.zipWithIndex.map {
         case (a, b) => "Topic %s:%6.3f".format(b, a)
       }.mkString("\n")))
-      summary.write("%s\n".format(model.getTopicsPerTarget.toList.map {
+      summary.write("%s\n".format(model.getLabelsToTopicDist.toList.map {
         case (a, b) => "Label %9s:%s".format(SentimentLabel.toEnglishName(a), b.map {
           "%7.3f".format(_)
         }.mkString(""))
@@ -97,7 +97,7 @@ object TopicalChunker extends Logging {
         }.mkString("\n")))
         index.write(("<div id=labelDistributions class=\"bordered table\">" +
           "<div class=\"labelDistribution row\"><span class=\"title cell\">topic</span><span class=\"values cell\"><span class=\"value\">  0</span><span class=\"value\">  1</span><span class=\"value\">  2</span></span></div>" +
-          "%s</div>\n").format(model.getTopicsPerTarget.toList.sortBy({
+          "%s</div>\n").format(model.getLabelsToTopicDist.toList.sortBy({
           case (a, b) => SentimentLabel.ordinality(a)
         }).map {
           case (a, b) => "<div class=\"labelDistribution row\"><span class=\"title cell\">Label %9s</span><span class=\"values cell\">%s</span></div>".format(SentimentLabel.toEnglishName(a), b.map {

@@ -36,7 +36,7 @@ class LDATopicModelFromFile(fileName: String) extends TopicModel {
     res
   }
 
-  def getTopicPriors: List[Double] = {
+  def getTopicPriors = {
     val result: Array[Double] = new Array[Double](numTopics)
     var sum = 0.0
     for (topicAssignment <- model.getData) {
@@ -46,30 +46,27 @@ class LDATopicModelFromFile(fileName: String) extends TopicModel {
         sum += temp(i)
       }
     }
-    result.toList.map((double: Double) => double / sum)
+    result.toList.map((double: Double) => double / sum).toArray
   }
 
-  def getTopicsPerInstance = {
+  def getIdsToTopicDist = {
     (for (topicAssignment <- model.getData) yield {
       val source = topicAssignment.instance.getName.toString
       val dist = model.getTopicProbabilities(topicAssignment.topicSequence)
-      (source, dist.toList)
-    }).toList
-  }
-
-  def getTopicsPerTarget = {
-    val result = scala.collection.mutable.Map[SentimentLabel.Type,List[Double]]()
-    for (topicAssignment <- model.getData) {
-      val target = topicAssignment.instance.getTarget.asInstanceOf[SentimentLabel.Type]
-      result(target) = result.getOrElse(target, (new Array[Double](numTopics)).toList).zip(model.getTopicProbabilities(topicAssignment.topicSequence).toList).map((pair) => pair._1+pair._2)
-    }
-    (for ((key, value) <- result) yield {
-      val sum = value.reduce( _ + _ )
-      (key->value.map(_ / sum))
+      (source, dist)
     }).toMap
   }
 
-  def inferTopics(tweet: GoldLabeledTweet): List[Double] = {
+    def getLabelsToTopicDists = {
+    val result = scala.collection.mutable.Map[SentimentLabel.Type,List[Array[Double]]]().withDefaultValue(Nil)
+    for (topicAssignment <- model.getData) {
+      val label = topicAssignment.instance.getTarget.asInstanceOf[SentimentLabel.Type]
+      result(label) = model.getTopicProbabilities(topicAssignment.topicSequence) :: result(label)
+    }
+    result.toMap // immutize
+  }
+
+  def inferTopics(tweet: GoldLabeledTweet) = {
     val instance = tweet match {
         case GoldLabeledTweet(id, userid, features, goldLabel) =>
           val featureSequence = new FeatureSequence(alphabet, features.length)
@@ -78,7 +75,7 @@ class LDATopicModelFromFile(fileName: String) extends TopicModel {
           }
           new Instance(featureSequence, goldLabel, id, null)
       }
-    model.getInferencer.getSampledDistribution(instance, numIterations, 1, 1).toList
+    model.getInferencer.getSampledDistribution(instance, numIterations, 1, 1)
   }
 
   def save(filename: String) {

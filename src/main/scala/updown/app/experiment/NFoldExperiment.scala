@@ -1,29 +1,29 @@
 package updown.app.experiment
 
 import updown.data.io.TweetFeatureReader
-import updown.data.{SentimentLabel, GoldLabeledTweet}
 import org.clapper.argot.ArgotParser._
 import org.clapper.argot.ArgotConverters._
 import com.weiglewilczek.slf4s.Logging
 import updown.util.Statistics
 import org.clapper.argot.{SingleValueOption, ArgotUsageException, ArgotParser}
+import updown.data.{SystemLabeledTweet, SentimentLabel, GoldLabeledTweet}
 
-abstract class NFoldExperiment extends Logging {
+abstract class NFoldExperiment extends Experiment {
   // this exists purely to make the ArgotConverters appear used to IDEA
   convertByte _
-  val parser = new ArgotParser(this.getClass.getName)
+//  val parser = new ArgotParser(this.getClass.getName)
     
   val goldInputFile = parser.option[String](List("g", "gold"), "gold", "gold labeled input")
   val n = parser.option[Int](List("n", "folds"), "FOLDS", "the number of folds for the experiment (default 10)")
   var experimentalRun = 0
 
-  def doExperiment(train: List[GoldLabeledTweet], test: List[GoldLabeledTweet]): ExperimentalResult
+  def doExperiment(train: List[GoldLabeledTweet], test: List[GoldLabeledTweet]): List[SystemLabeledTweet]
 
   def generateTrials(inputFile: String, nFolds: Int): Iterator[(List[GoldLabeledTweet], List[GoldLabeledTweet])] = {
     val polToTweetLists = TweetFeatureReader(inputFile).groupBy((tweet) => tweet.goldLabel)
 
     val minListLength = (for ((pol, tweetList) <- polToTweetLists) yield tweetList.length).min
-    logger.info("takining %d items from each polarity class. This was the minimum number in any class".format(minListLength))
+    logger.info("taking %d items from each polarity class. This was the minimum number in any class".format(minListLength))
     val allTweetsFolded =
       (for (index <- 0 until minListLength) yield {
         (for ((pol, tweetList) <- polToTweetLists) yield {
@@ -70,11 +70,15 @@ abstract class NFoldExperiment extends Logging {
           logger.debug("starting run " + experimentalRun)
           val result = doExperiment(trainSet, testSet)
           logger.debug("ending run " + experimentalRun)
+          logger.info("Intermediate:")
+          report(result)
           result
         }).toList
 
-      logger.info("intermediate results:\n" + results.mkString("\n"))
-      println("\n" + Statistics.averageResults("%d-fold Average".format(nFolds), results).toString)
+      val result = results.flatten
+      logger.info("Final Result:")
+      report(result)
+//      println("\n" + Statistics.averageResults("%d-fold Average".format(nFolds), results).toString)
       logger.debug("running cleanup code")
     }
     catch {
