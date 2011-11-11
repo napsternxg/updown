@@ -7,6 +7,7 @@ import org.clapper.argot.ArgotConverters._
 import java.io.{FileWriter, BufferedWriter, File}
 import updown.util.{WordleUtils, Statistics, LDATopicModel, TopicModel}
 import updown.app.experiment.{ExperimentalResult, NFoldExperiment}
+import java.util.Arrays
 
 abstract class NFoldTopicExperiment extends NFoldExperiment {
   var iterations = 1000
@@ -30,7 +31,7 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
   val wordleConfigOption = parser.option[String](List("wordleConfig"), "PATH", ("the path to the config file for IBM's " +
     "word cloud generator (default %s)").format(WordleUtils.defaultConfigurationPath))
 
-  def evaluate(model: TopicModel, testSet: scala.List[GoldLabeledTweet]): ExperimentalResult
+  def evaluate(model: TopicModel, testSet: scala.List[GoldLabeledTweet]): List[SystemLabeledTweet]
 
   def doOutput(model: TopicModel) {
     if (outputOption.value.isDefined) {
@@ -41,7 +42,7 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
       summary.write("%s\n".format(model.getTopicPriors.zipWithIndex.map {
         case (a, b) => "Topic %s:%6.3f".format(b, a)
       }.mkString("\n")))
-      summary.write("%s\n".format(model.getTopicsPerTarget.toList.map {
+      summary.write("%s\n".format(model.getLabelsToTopicDist.toList.map {
         case (a, b) => "Label %9s:%s".format(SentimentLabel.toEnglishName(a), b.map {
           "%7.3f".format(_)
         }.mkString(""))
@@ -79,7 +80,7 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
         }.mkString("\n")))
         index.write(("<div id=labelDistributions class=\"bordered table\">" +
           "<div class=\"labelDistribution row\"><span class=\"title cell\">topic</span><span class=\"values cell\"><span class=\"value\">  0</span><span class=\"value\">  1</span><span class=\"value\">  2</span></span></div>" +
-          "%s</div>\n").format(model.getTopicsPerTarget.toList.sortBy({case(a,b)=>SentimentLabel.ordinality(a)}).map {
+          "%s</div>\n").format(model.getLabelsToTopicDist.toList.sortBy({case(a,b)=>SentimentLabel.ordinality(a)}).map {
           case (a, b) => "<div class=\"labelDistribution row\"><span class=\"title cell\">Label %9s</span><span class=\"values cell\">%s</span></div>".format(SentimentLabel.toEnglishName(a), b.map {
             "<span class=value>%7.3f</span>".format(_)
           }.mkString(""))
@@ -115,10 +116,10 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
 
     logger.debug("alphaSum: " + alphaSum)
     val model: TopicModel = new LDATopicModel(trainSet, numTopics, iterations, alphaSum, beta)
-    logger.debug("topic distribution:\n     :" + model.getTopicPriors)
+    logger.debug("topic distribution:\n     :" + Arrays.toString(model.getTopicPriors))
     logger.debug({
-      val labelToTopicDist = model.getTopicsPerTarget
-      "topic distribution over labels:\n" + (for ((k, v) <- labelToTopicDist) yield "%5s:%s".format(k, v)).mkString("\n")
+      val labelToTopicDist = model.getLabelsToTopicDist
+      "topic distribution over labels:\n" + (for ((k, v) <- labelToTopicDist) yield "%5s:%s".format(k, Arrays.toString(v))).mkString("\n")
     })
     logger.debug({
       val topics = model.getTopics

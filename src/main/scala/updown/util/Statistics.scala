@@ -41,6 +41,8 @@ object Statistics extends Logging {
   val mag: (List[Double]) => Double =
     (A) => math.sqrt(A.map((i) => i * i).reduce(_ + _))
 
+  val arrayCosineSimilarity: (Array[Double], Array[Double]) => Double = (a,b)=>cosineSimilarity(a.toList, b.toList)
+  
   val cosineSimilarity: (List[Double], List[Double]) => Double =
     (A, B) => (dot(A, B) / (mag(A) * mag(B)))
 
@@ -66,30 +68,30 @@ object Statistics extends Logging {
   def averageResults(newName: String, results: scala.List[ExperimentalResult]): ExperimentalResult = {
     var avgAccuracy = 0.0
     var avgN = 0.0
-    var avgLabelResults = scala.collection.mutable.Map[SentimentLabel.Type, LabelResult]().withDefault((label) => LabelResult(0, label, 0.0, 0.0, 0.0))
+    var avgLabelResults = scala.collection.mutable.Map[SentimentLabel.Type, LabelResult]().withDefault((label) => LabelResult(0, 0, label, 0.0, 0.0, 0.0))
     // first, sum
     for (ExperimentalResult(name, n, accuracy, classes) <- results) {
       avgAccuracy += accuracy
       avgN += n
-      for (LabelResult(n, label, precision, recall, f) <- classes) {
-        val LabelResult(oN, oLabel, oPrecision, oRecall, oF) = avgLabelResults(label)
-        avgLabelResults(label) = LabelResult(n + oN, label, precision + oPrecision, recall + oRecall, f + oF)
+      for (LabelResult(nG, nS, label, precision, recall, f) <- classes) {
+        val LabelResult(oNG, oNS, oLabel, oPrecision, oRecall, oF) = avgLabelResults(label)
+        avgLabelResults(label) = LabelResult(nG + oNG, nS+oNS, label, precision + oPrecision, recall + oRecall, f + oF)
       }
     }
     // then, scale
     val N = results.length
     ExperimentalResult(newName, (avgN / N).toInt, avgAccuracy / N,
-      (for ((_, LabelResult(n, label, precision, recall, f)) <- avgLabelResults.toList.sortBy {
+      (for ((_, LabelResult(nG, nS, label, precision, recall, f)) <- avgLabelResults.toList.sortBy {
         case (k, v) => SentimentLabel.ordinality(k)
       }) yield {
-        LabelResult(n / N, label, precision / N, recall / N, f / N)
+        LabelResult(nG / N, nS/N, label, precision / N, recall / N, f / N)
       }).toList)
   }
 
   def getEvalStats(resultName: String, tweets: scala.List[SystemLabeledTweet]): ExperimentalResult = {
     val (correct, total) = tabulate(tweets)
     ExperimentalResult(resultName, total, accurracy(correct, total),
-      (for (label <- List(SentimentLabel.Positive, SentimentLabel.Negative, SentimentLabel.Neutral)) yield {
+      (for (label <- List(SentimentLabel.Positive, SentimentLabel.Negative, SentimentLabel.Neutral, SentimentLabel.Abstained)) yield {
         val goldList = tweets.filter((tweet) => tweet.goldLabel == label)
         logger.debug("%s gold tweets: %d".format(SentimentLabel.toEnglishName(label), goldList.length))
         val systemList = tweets.filter((tweet) => tweet.systemLabel == label)
@@ -102,7 +104,7 @@ object Statistics extends Logging {
           goldList.length
         )
 
-        LabelResult(goldList.length, label, labelPrecision, labelRecall, fScore(labelPrecision, labelRecall))
+        LabelResult(goldList.length, systemList.length, label, labelPrecision, labelRecall, fScore(labelPrecision, labelRecall))
       }).toList)
   }
 

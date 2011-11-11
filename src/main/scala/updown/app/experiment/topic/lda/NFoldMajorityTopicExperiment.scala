@@ -1,8 +1,8 @@
-package updown.app.experiment.topic
+package updown.app.experiment.topic.lda
 
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
-import updown.util.{Statistics, LDATopicModel, TopicModel}
-import updown.app.experiment.ExperimentalResult
+import updown.util.TopicModel
+import updown.app.experiment.topic.NFoldTopicExperiment
 
 object NFoldMajorityTopicExperiment extends NFoldTopicExperiment {
 
@@ -20,7 +20,7 @@ object NFoldMajorityTopicExperiment extends NFoldTopicExperiment {
   }
 
   def evaluate(model: TopicModel, testSet: scala.List[GoldLabeledTweet]) = {
-    val labelToTopicDist = model.getTopicsPerTarget
+    val labelToTopicDist = model.getLabelsToTopicDist
 
     //This approach will only work if there is a very clear sentiment-topic correlation.
     val badTopic = labelToTopicDist(SentimentLabel.Negative).indexOf(labelToTopicDist(SentimentLabel.Negative).max)
@@ -35,10 +35,10 @@ object NFoldMajorityTopicExperiment extends NFoldTopicExperiment {
       logger.warn("No clear distribution for the neutral label. ")
     }
 
-    val res = Statistics.getEvalStats("Majority Topic",for (tweet <- testSet) yield {
+    val res = (for (tweet <- testSet) yield {
       label(model, tweet, goodTopic, badTopic)
-    })
-    logger.info(res.toString)
+    }).toList
+//    logger.info(res.toString)
     res
   }
 }

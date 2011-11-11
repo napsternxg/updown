@@ -12,13 +12,13 @@ object NFoldMaxentExperiment extends NFoldExperiment {
     val model = TrainMaxentModel.trainWithGoldLabeledTweetIterator(trainSet.iterator)
 
     logger.debug("testing model")
-    val res = Statistics.getEvalStats("Maxent",for (tweet <- testSet) yield {
+    val res = (for (tweet <- testSet) yield {
       tweet match {
         case GoldLabeledTweet(id, userid, features, goldLabel) =>
           SystemLabeledTweet(id, userid, features, goldLabel,
             SentimentLabel.figureItOut(model.getBestOutcome(model.eval(features.toArray))))
       }
-    })
+    }).toList
     logger.info(res.toString)
     res
   }
