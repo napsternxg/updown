@@ -21,11 +21,11 @@ object MPQALexicon {
   val NEG = "NEG"
   val NEU = "NEU"
 
-  //  val mpqaLineRE = """^.*word1=(\w+).*mpqapolarity=(neutral)|(weakneg)|(strongneg)|(weakpos)|(strongpos).*$""".r
+  //val mpqaLineRE = """^.*word1=(\w+).*mpqapolarity=(neutral)|(weakneg)|(strongneg)|(weakpos)|(strongpos).*$""".r
   /* broke up one regex into two. Note the below two aint equiv to above one.*/
   val wordRE = """word1=(\w+)""".r
-  val polarityRE = """mpqapolarity=(neutral)|(neg)|(pos)$""".r
-  val subjectivityRE = """mpqapolarity=(strong)|(weak)$""".r
+  val polarityRE = """mpqapolarity=\w*(neutral|neg|pos)""".r
+  val subjectivityRE = """mpqapolarity=\w*(strong|weak)""".r
 
   def parseLine(line: String, entries: HashMap[String, MPQAEntry]): Any = {
     //whoa! interesting line of code. but causes runtime match error. shouldn't we be passing character seq and not strings?..
@@ -35,10 +35,13 @@ object MPQALexicon {
     val polarityOption = polarityRE.findFirstIn(line)
     val subjectivityOption = subjectivityRE.findFirstIn(line)
 
-    if (wordOption != None && polarityOption != None && subjectivityOption != None) {
+    if (wordOption != None && polarityOption != None/* && subjectivityOption != None*/) {
       val word = wordOption.get.substring(6)
-      val polarity = polarityOption.get.toUpperCase
-      val subjectivity = subjectivityOption.get.split("=").last
+      val rawPolarity = polarityOption.get.toUpperCase.split("=").last
+      val polarity = if(rawPolarity.endsWith(POS)) POS
+                     else if(rawPolarity.endsWith(NEG)) NEG
+                     else NEU
+      val subjectivity = if(subjectivityOption != None) subjectivityOption.get.split("=").last else NEU
 
       entries.put(word, new MPQAEntry(word, polarity, subjectivity))
     }
@@ -83,5 +86,15 @@ class MPQAEntry(val word: String, val polarity: String, val subjectivity: String
     } else {
       false
     }
+  }
+}
+
+object MPQALexiconTest {
+  def main(args: Array[String]) = {
+    val lexicon = MPQALexicon(args(0))
+    println("Number of entries: "+lexicon.keySet.size)
+    println(lexicon("great"))
+    println(lexicon("glee"))
+    println(lexicon("awful"))
   }
 }
