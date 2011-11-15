@@ -1,0 +1,137 @@
+#!/bin/bash
+
+CP_CONFIG=${CP_CONFIG:-$UPDOWN_DIR/config/main}
+
+JARS=`echo $UPDOWN_DIR/lib/*.jar $UPDOWN_DIR/lib_managed/*/*.jar $UPDOWN_DIR/lib_managed/*/*/*.jar $UPDOWN_DIR/lib_managed/*/*/*/*.jar $UPDOWN_DIR/output/*.jar $UPDOWN_DIR/target/*.jar | tr ' ' ':'`
+SCALA_LIB="$HOME/.sbt/boot/scala-2.9.1/lib/scala-library.jar"
+
+CP="$UPDOWN_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH:$CP_CONFIG"
+
+FIRSTARG="$1"
+
+MEMORY=2g
+
+case $FIRSTARG in
+  [0-9] | [0-9][0-9]) 
+	MEMORY="${FIRSTARG}g"
+	shift
+	;;
+    *) ;;
+esac
+
+JAVA=$JAVA_HOME/bin/java
+
+JAVA_COMMAND="java -Xmx$MEMORY -classpath $CP"
+SCALA_COMMAND="scala -classpath $CP"
+
+CMD=$1
+shift
+
+help()
+{
+cat <<EOF
+Updown 0.1 commands: 
+
+  run               	run the main method of a given class
+
+  train-maxent          train a maxent model:
+    command -g path/to/gold/labeled/tweets.txt 
+            -m path/to/output/model.mxm
+            [-n interations ]
+            [-c cutoff value]                   
+
+  preproc-emos          preprocess emoticon tweet data.    
+
+  preproc-hcr           preprocess HCR dataset
+    command arg(0) path/to/hcr/data.csv
+            arg(1) path/to/stoplist.txt
+            [arg(2) path/target/output/file.txt]
+            [arg(3) path/to/feature/output/file.txt -- only need for arabic tweets ;) ]
+
+  preproc-shamma        preprocess Shamma dataset
+
+  preproc-stanford      preprocess Stanford dataset
+
+  per-tweet-eval        comapare gold labels to system labels for a dataset
+    command -g path/to/gold/labeled/tweets.txt
+            -m path/to/some/model
+            [-t path/to/output/target/file.txt ]
+
+  per-user-eval         compute user postivity ratio
+
+  per-target-eval       compute target accuracy
+
+  lex-ratio             compare gold labels and system labels using sentiment lexicon (e.g. MPQA)
+    command -g path/to/gold/labeled/tweets.txt
+            -p path/to/senstiment/lexicon
+            [-t path/to/output/target/file.txt ]
+
+  junto                 run junto
+
+Include --help with any option for more information
+EOF
+}
+
+
+if [ $CMD = 'build' ]; then
+    #$JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar "$@"
+    $JAVA -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m -Xmx512M -Xss2M -jar $UPDOWN_DIR/bin/sbt-launch-*.jar ${1+"$@"}
+
+elif [ $CMD = 'scct' ]; then
+
+    $JAVA_COMMAND -jar $UPDOWN_DIR/project/build/sbt-launch-0.7.7.jar clean test-coverage "$@"
+    firefox $UPDOWN_DIR/target/coverage-report/index.html
+
+elif [ $CMD = 'preproc-stanford' ]; then
+
+     $SCALA_COMMAND updown.preproc.impl.PreprocStanfordTweets $*
+
+elif [ $CMD = 'preproc-shamma' ]; then
+
+     $SCALA_COMMAND updown.preproc.impl.PreprocShammaTweets $*
+
+elif [ $CMD = 'preproc-hcr' ]; then
+
+     $SCALA_COMMAND updown.preproc.impl.PreprocHCRTweets $*
+
+elif [ $CMD = 'per-tweet-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerTweetEvaluator $*
+
+elif [ $CMD = 'per-user-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerUserEvaluator $*
+
+elif [ $CMD = 'per-target-eval' ]; then
+
+     $SCALA_COMMAND updown.app.PerTargetEvaluator $*
+
+elif [ $CMD = 'train-maxent' ]; then
+
+     $SCALA_COMMAND updown.app.TrainMaxentModel $*
+
+elif [ $CMD = 'lex-ratio' ]; then
+
+     $SCALA_COMMAND updown.app.LexicalRatioClassifier $*
+
+elif [ $CMD = 'preproc-emos' ]; then
+
+     $SCALA_COMMAND updown.preproc.PreprocEmoticonTweets $*
+
+elif [ $CMD = 'junto' ]; then
+
+     $SCALA_COMMAND updown.app.JuntoClassifier $*
+
+else  
+
+    CLASS=
+
+    case $CMD in
+	run) CLASS=$1; shift;;
+	help) help; exit 1;;
+	*) echo "Unrecognized command: $CMD"; help; exit 1;;
+    esac
+
+    $JAVA_COMMAND $CLASS $*
+
+fi
