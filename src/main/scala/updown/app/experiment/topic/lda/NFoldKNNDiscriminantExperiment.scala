@@ -3,9 +3,11 @@ package updown.app.experiment.topic.lda
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
 import updown.util.TopicModel
 import scala.Array
-import updown.app.experiment.topic.util.MaxentDiscriminant
-
-object NFoldDiscriminantLDAExperiment extends NFoldTopicExperiment with MaxentDiscriminant {
+import updown.app.experiment.topic.util.KNNDiscriminant
+import org.clapper.argot.ArgotConverters._
+object NFoldKNNDiscriminantExperiment extends NFoldTopicExperiment with KNNDiscriminant {
+  val DEFAULT_K = 11
+  val kOption = parser.option[Int](List("k","numNearestNeighbors"), "INT", "the number of nearest neighbors to consider in choosing a label")
 
   def label(model: TopicModel, tweet: GoldLabeledTweet, discriminantFn: (Array[Float]) => (String, String)): SystemLabeledTweet = {
     val topicDist: Array[Float] = model.inferTopics(tweet).map((item) => item.asInstanceOf[Float])
@@ -19,8 +21,13 @@ object NFoldDiscriminantLDAExperiment extends NFoldTopicExperiment with MaxentDi
 
   def evaluate(model: TopicModel, testSet: scala.List[GoldLabeledTweet]) = {
     logger.debug("entering evaluation with %d items in the test set".format(testSet.length))
+    val k = kOption.value match {
+      case Some(x:Int) => x
+      case None => DEFAULT_K
+    }
+
     val labelsToTopicDists: Map[SentimentLabel.Type, List[Array[Double]]] = model.getLabelsToTopicDists
-    val discriminantFn = getDiscriminantFn(labelsToTopicDists)
+    val discriminantFn = getDiscriminantFn(k,labelsToTopicDists)
     val start = System.currentTimeMillis()
 
     val res = (for ((tweet, i) <- testSet.zipWithIndex) yield {

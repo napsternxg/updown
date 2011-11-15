@@ -2,7 +2,6 @@ package updown.app.experiment.topic.lda
 
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
 import updown.util.{Statistics, TopicModel}
-import updown.app.experiment.topic.NFoldTopicExperiment
 
 object NFoldSimilarityTopicExperiment extends NFoldTopicExperiment {
   def label(model: TopicModel, tweet: GoldLabeledTweet, labelToTopicDist: Map[SentimentLabel.Type,Array[Double]]): SystemLabeledTweet = {

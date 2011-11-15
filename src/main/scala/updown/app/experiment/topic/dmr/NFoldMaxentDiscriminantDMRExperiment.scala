@@ -1,11 +1,11 @@
-package updown.app.experiment.topic.lda
+package updown.app.experiment.topic.dmr
 
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
 import updown.util.TopicModel
 import scala.Array
 import updown.app.experiment.topic.util.MaxentDiscriminant
 
-object NFoldDiscriminantLDAExperiment extends NFoldTopicExperiment with MaxentDiscriminant {
+object NFoldMaxentDiscriminantDMRExperiment extends NFoldDMRExperiment with MaxentDiscriminant {
 
   def label(model: TopicModel, tweet: GoldLabeledTweet, discriminantFn: (Array[Float]) => (String, String)): SystemLabeledTweet = {
     val topicDist: Array[Float] = model.inferTopics(tweet).map((item) => item.asInstanceOf[Float])

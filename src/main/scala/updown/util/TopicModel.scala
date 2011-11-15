@@ -8,6 +8,7 @@ case class Topic(prior: Double, distribution: Map[String, Double])
 abstract class TopicModel {
   protected def getInstanceList(tweetList: List[GoldLabeledTweet]): (Alphabet, InstanceList) = {
     val alphabet = new Alphabet()
+    val labelAlphabet = new Alphabet()
     val instances = (for (tweet <- tweetList) yield {
       tweet match {
         case GoldLabeledTweet(id, userid, features, goldLabel) =>
@@ -15,7 +16,10 @@ abstract class TopicModel {
           for (feature <- features) {
             featureSequence.add(feature)
           }
-          new Instance(featureSequence, goldLabel, id, null)
+          val label = new FeatureVector(
+            labelAlphabet,
+            Array[Object]("label"), Array[Double](SentimentLabel.toDouble(goldLabel)))
+          new Instance(featureSequence, label, id, null)
       }
     }).toList
 

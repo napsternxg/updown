@@ -114,19 +114,23 @@ class HPAMTopicModel(tweets: List[GoldLabeledTweet], numSuperTopics: Int, numSub
         for (feature <- features) {
           featureSequence.add(feature)
         }
-        getTopicVector(model.destructiveTopicInference(featureSequence, numIterations/2))
+        getTopicVector(model.topicInferenceLast(featureSequence, numIterations))
     }
   }
 
   def getTopicVector(topics: Array[Array[Int]]): Array[Double] = {
     val superCounts = computeDistribution(topics(0).toList).withDefaultValue(0.0)
     val subCounts = computeDistribution(topics(1).toList).withDefaultValue(0.0)
+    logger.trace("getting topic vector for super:%s sub:%s".format(superCounts, subCounts))
     val result = Array.ofDim[Double](
-      1 + numSuperTopics
-//        + numSubTopics
+      //      1 +
+      numSuperTopics
+      //        + numSubTopics
     )
-    for (i <- 0 until (1 + numSuperTopics)) {result(i) = superCounts(i)}
-//    for (i <- 0 until (numSubTopics)) {result(1+numSuperTopics+i) = subCounts(i)}
+    for (i <- 1 until (1 + numSuperTopics)) {
+      result(i - 1) = superCounts(i)
+    }
+    //    for (i <- 0 until (numSubTopics)) {result(1+numSuperTopics+i) = subCounts(i)}
     result
   }
 

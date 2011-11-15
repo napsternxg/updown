@@ -2,7 +2,6 @@ package updown.app.experiment.topic.lda
 
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
 import updown.util.TopicModel
-import updown.app.experiment.topic.NFoldTopicExperiment
 
 object NFoldMajorityTopicExperiment extends NFoldTopicExperiment {
 

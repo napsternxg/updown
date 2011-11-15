@@ -1,4 +1,4 @@
-package updown.app.experiment.topic
+package updown.app.experiment.topic.lda
 
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
 import org.clapper.argot.{SingleValueOption, ArgotParser}

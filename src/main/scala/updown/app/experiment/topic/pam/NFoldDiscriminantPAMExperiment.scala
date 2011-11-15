@@ -1,9 +1,9 @@
 package updown.app.experiment.topic.pam
 
 import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
-import updown.util.TopicModel
 import updown.app.experiment.topic.util.MaxentDiscriminant
 import java.util.Arrays
+import updown.util.{HPAMTopicModel, TopicModel}
 
 object NFoldDiscriminantPAMExperiment extends NFoldPAMExperiment with MaxentDiscriminant {
   def label(model: TopicModel, tweet: GoldLabeledTweet, discriminantFn: (Array[Float]) => (String, String)): SystemLabeledTweet = {
@@ -11,7 +11,7 @@ object NFoldDiscriminantPAMExperiment extends NFoldPAMExperiment with MaxentDisc
     val (label: String, outcomes: String) = discriminantFn(topicDist)
 
     val GoldLabeledTweet(id, userid, features, goldLabel) = tweet
-    logger.trace("labeling id:%s gold:%s with label:%s from outcomes:%s".format(id, goldLabel.toString, label.toString, outcomes))
+    logger.trace("labeling id:%s gold:%2s with label:%2s from outcomes:%s (has distribution %s)".format(id, goldLabel.toString, label.toString, outcomes, Arrays.toString(topicDist)))
     SystemLabeledTweet(id, userid, features, goldLabel, SentimentLabel.figureItOut(label))
   }
 
