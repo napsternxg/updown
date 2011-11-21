@@ -116,7 +116,7 @@ abstract class NFoldDMRExperiment extends NFoldExperiment {
     logger.debug("alphaSum: " + alphaSum)
     val model: TopicModel = new DMRTopicModel(trainSet,numTopics,iterations,alphaSum,beta)
     logger.debug("topic distribution:\n     :" + Arrays.toString(model.getTopicPriors))
-    model.asInstanceOf[DMRTopicModel].dumpToStdOut
+    model.asInstanceOf[DMRTopicModel].dumpState
     logger.debug({
       val labelToTopicDist = model.getLabelsToTopicDist
       "topic distribution over labels:\n" + (for ((k, v) <- labelToTopicDist) yield "%5s:%s".format(k, Arrays.toString(v))).mkString("\n")

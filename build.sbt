@@ -12,7 +12,6 @@ retrieveManaged := true
 
 libraryDependencies ++= Seq(
   "org.apache.opennlp" % "opennlp-maxent" % "3.0.1-incubating",
-  "org.apache.opennlp" % "opennlp-tools" % "1.5.1-incubating",
   "org.clapper" %% "argot" % "0.3.5",
   "com.weiglewilczek.slf4s" %% "slf4s" % "1.0.7",
   "org.scalatest" %% "scalatest" % "1.6.1" % "test"

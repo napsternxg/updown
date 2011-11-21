@@ -14,7 +14,7 @@ class LDATopicModelFromFile(fileName: String) extends TopicModel {
   private val numIterations = model.numIterations
 
   def getTopics: List[Topic] = {
-    val priors = getTopicPriors
+    val priors: Array[Double] = getTopicPriors
     val topicsToAlphaIds = scala.collection.mutable.Map[Int,List[(Int,Double)]]()
 
     val wordsTopicsCounts = (for ((topicCounts, typeIndex) <- model.typeTopicCounts.zipWithIndex) yield {
@@ -30,7 +30,7 @@ class LDATopicModelFromFile(fileName: String) extends TopicModel {
     val res = (for (i <- 0 until numTopics) yield {
       val wordCounts = wordsTopicsCounts.filter((triple)=>(triple._2==i && triple._3!=0))
       val sum = wordCounts.map((triple)=>triple._3).reduce(_ + _)
-      Topic(priors(i), wordCounts.map((triple)=>(triple._1->(triple._3.toDouble/sum))).toMap)
+      Topic(Map("alpha"->priors(i)), wordCounts.map((triple)=>(triple._1->(triple._3.toDouble/sum))).toMap)
     }).toList
 
     res
