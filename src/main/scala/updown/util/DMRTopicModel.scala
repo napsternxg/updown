@@ -7,6 +7,7 @@ import java.io.File
 import scala.Predef._
 import scala._
 import com.weiglewilczek.slf4s.Logging
+import scala.collection.JavaConversions._
 
 class DMRTopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIterations: Int
                     , alphaSum: Double, beta: Double) extends TopicModel with Logging {
@@ -35,21 +36,30 @@ class DMRTopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
     model.printTopWords(20, true)
   }*/
 
-  def dumpToStdOut = {
-    model.printTopWords(System.out,20,true)
-    System.out.flush()
+  def dumpState() {
+    model.printState(new File("dmr.state"))
+    model.writeParameters(new File("dmr.parameters"))
   }
 
   def getTopics: List[Topic] = {
-    List[Topic]()
+    val topicPriors = model.getParameterValues
+    (for ((priorMap, i) <- topicPriors.zipWithIndex) yield {
+      val wordDistributionMap = model.getSortedTopicWords(i)
+        .filter(idSorter => idSorter.getWeight > 0)
+        .map(idSorter => (alphabet.lookupObject(idSorter.getID).toString, idSorter.getWeight))
+        .toMap
+      Topic(priorMap.toMap.map{case(s,d)=>(s.toString,d.asInstanceOf[Double])}, wordDistributionMap)
+    }).toList
   }
 
   def getTopicPriors = {
-    Array[Double](numTopics)
+    model.getParameterValues.map(parameterMap=>parameterMap.get("label").asInstanceOf[Double]).toArray
   }
 
   def getIdsToTopicDist = {
-    Map[String, Array[Double]]()
+    (for ((tweet, index) <- tweets.zipWithIndex) yield {
+      (tweet.id, getTopicVector(model.getData.get(index).topicSequence.asInstanceOf[LabelSequence]))
+    }).toMap
   }
 
   def getLabelsToTopicDists = {
@@ -61,15 +71,15 @@ class DMRTopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
   }
 
   def inferTopics(tweet: GoldLabeledTweet): Array[Double] = {
-    /*tweet match {
+    tweet match {
       case GoldLabeledTweet(id, userid, features, goldLabel) =>
         val featureSequence = new FeatureSequence(alphabet, features.length)
         for (feature <- features) {
           featureSequence.add(feature)
         }
-        getTopicVector(model.topicInferenceLast(featureSequence, numIterations))
-    }*/
-    Array[Double]()
+        getTopicVector(model.inferTopics(featureSequence,1000))
+    }
+//    Array[Double]()
   }
 
   def getTopicVector(topics: LabelSequence): Array[Double] = {
@@ -77,11 +87,13 @@ class DMRTopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
     var total = 0.0
     val topicsIterator = topics.iterator()
     while (topicsIterator.hasNext) {
-      val label:Label= topicsIterator.next().asInstanceOf[Label]
+      val label: Label = topicsIterator.next().asInstanceOf[Label]
       topicVector(label.getIndex) += 1.0
       total += 1.0
     }
-    topicVector.map(d => d / total)
+    val result:Array[Double] = topicVector.map(d => d / total)
+    logger.trace("getting topic vector: %s".format(result.toList.toString))
+    result
   }
 
   def save(filename: String) {

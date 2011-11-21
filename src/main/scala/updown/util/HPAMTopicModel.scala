@@ -38,7 +38,7 @@ class HPAMTopicModel(tweets: List[GoldLabeledTweet], numSuperTopics: Int, numSub
   def getTopics: List[Topic] = {
     val supers = model.getSuperTopicPriorWeights
     val subs = model.getSuperSubTopicPriorWeights
-    var result = Topic(1.0, Map(("TOPIC_1" -> supers(1)), ("TOPIC_2" -> supers(2)), ("TOPIC_3" -> supers(3)))) //root
+    var result = Topic(Map("alpha"->1.0), Map(("TOPIC_1" -> supers(1)), ("TOPIC_2" -> supers(2)), ("TOPIC_3" -> supers(3)))) //root
     for (i <- 0 until numSuperTopics) {
       val sub = subs(i)
     }
