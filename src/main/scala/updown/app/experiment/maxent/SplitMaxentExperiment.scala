@@ -6,7 +6,7 @@ import updown.app.TrainMaxentModel
 import updown.app.experiment.{SplitExperiment, NFoldExperiment}
 
 object SplitMaxentExperiment extends SplitExperiment {
-  def doExperiment(trainSet: List[GoldLabeledTweet], testSet: List[GoldLabeledTweet]) = {
+  def doExperiment(testSet: List[GoldLabeledTweet], trainSet: List[GoldLabeledTweet]) = {
     logger.info("performing Maxent experiment")
     logger.debug("training model")
     val model = TrainMaxentModel.trainWithGoldLabeledTweetIterator(trainSet.iterator)
