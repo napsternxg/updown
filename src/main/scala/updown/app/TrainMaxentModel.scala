@@ -19,7 +19,7 @@ import updown.data.io.TweetFeatureReader
  *
  * or, using the -s flag, train from a simple file that has the format:
  * feature1,feature2,feature3,...,featureN,label
- * 
+ *
  * @author Mike Speriosu
  */
 object TrainMaxentModel {
@@ -30,8 +30,10 @@ object TrainMaxentModel {
   val DEFAULT_CUTOFF = 5
 
 
-  def apply(fileName: String, iterations: Int, cutoff: Int): AbstractModel =
+  def apply(fileName: String, iterations: Int, cutoff: Int): AbstractModel = {
+    GIS.PRINT_MESSAGES = false
     GIS.trainModel(MaxentEventStreamFactory(fileName), iterations, cutoff)
+  }
 
   def apply(fileName: String): AbstractModel = apply(fileName, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
@@ -40,16 +42,22 @@ object TrainMaxentModel {
     val dataStream = new PlainTextByLineDataStream(reader)
     val eventStream = new BasicEventStream(dataStream, ",")
 
+    GIS.PRINT_MESSAGES = false
     GIS.trainModel(eventStream, iterations, cutoff)
   }
 
-  def trainWithStringIterator(iterator: Iterator[String], iterations: Int, cutoff: Int): AbstractModel =
+  def trainWithStringIterator(iterator: Iterator[String], iterations: Int, cutoff: Int): AbstractModel = {
+    GIS.PRINT_MESSAGES = false
+
     GIS.trainModel(MaxentEventStreamFactory.getWithStringIterator(iterator), iterations, cutoff)
+  }
 
   //  def apply[String](iterator: Iterator[String]): AbstractModel = apply(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
-  def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet], iterations: Int, cutoff: Int): AbstractModel =
+  def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet], iterations: Int, cutoff: Int): AbstractModel = {
+    GIS.PRINT_MESSAGES = false
     GIS.trainModel(MaxentEventStreamFactory.getWithGoldLabeledTweetIterator(iterator), iterations, cutoff)
+  }
 
   def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet]): AbstractModel = trainWithGoldLabeledTweetIterator(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
@@ -78,10 +86,10 @@ object TrainMaxentModel {
     }
 
 
-    val model: AbstractModel = if(simple.value == None)
-      apply(inputFile.value.get,iterations.value.getOrElse(DEFAULT_ITERATIONS), cutoff.value.getOrElse(DEFAULT_CUTOFF))
+    val model: AbstractModel = if (simple.value == None)
+      apply(inputFile.value.get, iterations.value.getOrElse(DEFAULT_ITERATIONS), cutoff.value.getOrElse(DEFAULT_CUTOFF))
     else
-      trainSimple(inputFile.value.get,iterations.value.getOrElse(DEFAULT_ITERATIONS), cutoff.value.getOrElse(DEFAULT_CUTOFF))
+      trainSimple(inputFile.value.get, iterations.value.getOrElse(DEFAULT_ITERATIONS), cutoff.value.getOrElse(DEFAULT_CUTOFF))
 
     val modelWriter = new BinaryGISModelWriter(model, new File(outputFile.value.get))
     modelWriter.persist()

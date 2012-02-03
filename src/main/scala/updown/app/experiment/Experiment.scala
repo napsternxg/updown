@@ -9,12 +9,44 @@ import updown.data.{SentimentLabel, TargetedSystemLabeledTweet, SystemLabeledTwe
 abstract class Experiment extends Logging {
   val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Updown"))
   val targetsInputFile = parser.option[String](List("t", "targets"), "targets", "targets")
+  val reportFormatO = parser.option[String]("format","tex|txt","default is txt") {
+    (s,opt) =>
+      s.toLowerCase() match {
+        case "tex" => "tex"
+        case "txt" => "txt"
+        case _     => parser.usage("Format must be 'tex' or 'txt'.")
+      }
+  }
+  val reportNameO = parser.option[String]("name","STRING","The name to use in reports. If unspecified, the name will " +
+    "be composed of the input files.")
 
-  def report(labeledTweets: List[SystemLabeledTweet]) {
-    logger.info("Overall:\n" + Statistics.getEvalStats("", labeledTweets).toString)
+
+  def reportTex(experimentName: String, labeledTweets: List[SystemLabeledTweet]) {
+    val outputName = reportNameO.value match {
+      case Some(s:String) => s
+      case _ => experimentName
+    }
+    val ExperimentalResult(_,eN,accuracy,classes) = Statistics.getEvalStats("",labeledTweets)
+    lazy val varName:(String)=>(String)=>(String)=>String = (prefix)=>(suffix)=>(value)=>"\\newcommand{\\%s%s}{%s}".format(prefix,suffix,value)
+    lazy val nName = varName("n")(outputName)
+    lazy val accName = varName("acc")(outputName)
+    lazy val fposName = varName("fpos")(outputName)
+    lazy val fnegName = varName("fneg")(outputName)
+    println("% "+outputName)
+    println(nName("%d".format(eN)))
+    println(accName("%.2f".format(accuracy)))
+    val classesMap = classes.groupBy(res=>res.label)
+    println(fposName("%.2f".format(classesMap(SentimentLabel.Positive)(0).f)))
+    println(fnegName("%.2f".format(classesMap(SentimentLabel.Negative)(0).f)))
+  }
+
+  def reportTxt(experimentName: String, labeledTweets: List[SystemLabeledTweet]) {
+    println("\n-----------------------------------------------------")
+    println(experimentName+":")
+    println("Overall:\n" + Statistics.getEvalStats("", labeledTweets).toString)
 
     val (msePerUser, nUsers) = Statistics.getMSEPerUser(labeledTweets)
-    logger.info("Per-user Summary:\nN users:%d\n%s\n%s".format(nUsers, "%15s %5s %7s".format("Label", "MSE", "√(MSE)"),
+    println("Per-user Summary:\nN users:%d\n%s\n%s".format(nUsers, "%15s %5s %7s".format("Label", "MSE", "√(MSE)"),
       msePerUser.map {
         case (label, mse) => "%15s %.3f   %.3f".format(SentimentLabel.toEnglishName(label), mse, math.sqrt(mse))
       }.mkString("\n")))
@@ -33,11 +65,17 @@ abstract class Experiment extends Logging {
         }
         val (statsPerTarget, nTargets) = Statistics.getEvalStatsPerTarget("", targetedTweets)
         if (statsPerTarget.length > 0) {
-          logger.info("Per-target:\nN targets: %d\n%s".format(nTargets, statsPerTarget.mkString("\n")))
+          println("\nPer-target:\nN targets: %d\n%s".format(nTargets, statsPerTarget.mkString("\n")))
         } else
-          logger.info("Per-target: No targets were over the threshold")
+          println("\nPer-target: No targets were over the threshold")
       case None =>
-        logger.info("Per-target: No target file provided")
+        println("\nPer-target: No target file provided")
+    }
+  }
+  def report(experimentName: String, labeledTweets: List[SystemLabeledTweet]) {
+    reportFormatO.value match {
+      case Some("tex") => reportTex(experimentName,labeledTweets)
+      case _ => reportTxt(experimentName,labeledTweets)
     }
   }
 }
