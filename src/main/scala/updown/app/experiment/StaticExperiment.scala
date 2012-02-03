@@ -29,7 +29,7 @@ abstract class StaticExperiment extends Experiment {
       val labeledTweets = doExperiment(TweetFeatureReader(dataFileName))
       logger.debug("ending run")
 
-      report(labeledTweets)
+      report(dataFileName,labeledTweets)
 
       logger.debug("running cleanup code")
       System.exit(after())

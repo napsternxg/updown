@@ -19,7 +19,6 @@ object NFoldMaxentExperiment extends NFoldExperiment {
             SentimentLabel.figureItOut(model.getBestOutcome(model.eval(features.toArray))))
       }
     }).toList
-    logger.info(res.toString)
     res
   }
   def after():Int=0

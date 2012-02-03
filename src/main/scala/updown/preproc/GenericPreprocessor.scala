@@ -22,7 +22,7 @@ abstract class GenericPreprocessor extends Logging {
     )
   val defaultPipeline = "twokenize|removeStopwords"
   val parser = new ArgotParser("updown run updown.preproc.PreprocStanfordTweets", preUsage = Some("Updown"))
-  val inputFile = parser.option[String](List("i", "input"), "input", "path to stanford data file")
+  val inputFile = parser.option[String](List("i", "input"), "input", "path to data file")
   val stopListFile = parser.option[String](List("s", "stoplist"), "stoplist", "path to stoplist file")
   val startId = parser.option[Int](List("start-id"), "ID", "id at which to start numbering lines")
   val textPipeline = parser.option[String](List("textPipeline"), "PIPELINE",
@@ -81,11 +81,13 @@ abstract class GenericPreprocessor extends Logging {
     writer.write("%s|%s\n".format(id, target))
   }
 
+  def before() {}
+
   def main(args: Array[String]) {
     logger.debug(args.toList.toString)
     try {
       parser.parse(args)
-
+      before()
       // SET UP IO
 
       logger.debug("Inputfile: %s".format(inputFile.value))

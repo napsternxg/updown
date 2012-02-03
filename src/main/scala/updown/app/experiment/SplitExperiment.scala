@@ -41,7 +41,7 @@ abstract class SplitExperiment extends Experiment {
           result
       }
       
-      report(result)
+      report(trainFileName.toString+"->"+testFileName.toString ,result)
       logger.debug("running cleanup code")
       System.exit(after())
     }

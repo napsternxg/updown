@@ -9,6 +9,12 @@ import java.io.{File, FileInputStream, InputStreamReader}
 object PreprocMDSDReviews extends GenericPreprocessor {
   override val defaultPipeline = "basicTokenize"
 
+  override def before() {
+    pipeStages = pipeStages + (("filterBigrams", (ss: List[String]) => {
+      ss.filterNot(_.contains("_"))
+    }))
+  }
+
   val getTokensFromLine: (String) => (List[String], SentimentLabel.Type) = line => {
     lazy val getTokensFromLineHelper: (List[String], List[String], SentimentLabel.Type) => (List[String], SentimentLabel.Type) =
       (inputs, tokens, label) => {

@@ -75,6 +75,7 @@ object SplitJuntoExperiment extends SplitExperiment with JuntoExperiment {
       (followerGraphFile.value,followerGraphFileTest.value) match {
         case (Some(filename: String),Some(filenameTest: String)) =>
           createTransductiveGraph(trainTweets, filename, testTweets, filenameTest, edgeSeedSet, getNgramWeight)
+        case _ => throw new MatchError()
       }
 
     logger.debug("running label prop")
