@@ -1,7 +1,6 @@
 package updown.preproc
 
 import org.clapper.argot.{ArgotUsageException, ArgotParser, ArgotConverters}
-import ArgotConverters._
 import updown.data.SentimentLabel
 import updown.util.TokenizationPipes
 import com.weiglewilczek.slf4s.Logging
@@ -9,8 +8,7 @@ import collection.immutable.List._
 import java.io.{File, FileOutputStream, OutputStreamWriter}
 
 abstract class GenericPreprocessor extends Logging {
-  // this is here to make ArgotConverters appear used to IDEA.
-  convertString _
+  import ArgotConverters._
   var pipeStages: Map[String, (List[String]) => List[String]] =
     Map[String, (List[String]) => List[String]](
       ("lowerCase" -> TokenizationPipes.toLowercase),
