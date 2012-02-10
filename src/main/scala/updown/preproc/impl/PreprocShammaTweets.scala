@@ -2,6 +2,8 @@ package updown.preproc.impl
 
 import updown.data.SentimentLabel
 import updown.preproc.GenericPreprocessor
+import java.io.File
+
 object PreprocShammaTweets extends GenericPreprocessor {
   //IDEA will try to remove this import, but it is not unused. Make sure it stays here.
   // See http://devnet.jetbrains.com/message/5301770;jsessionid=5C12AD4FD62857DAD611E8EEED52DF6A
@@ -35,8 +37,8 @@ object PreprocShammaTweets extends GenericPreprocessor {
     }
   }
 
-  def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
-    for (line <- scala.io.Source.fromFile(fileName, "UTF-8").getLines) yield {
+  def getInstanceIterator(file:File): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
+    for (line <- scala.io.Source.fromFile(file, "UTF-8").getLines) yield {
       val roughTokens = line.split("\t")
 
       if (!line.startsWith("#") && roughTokens.length >= 8 && line.length > 0 && Character.isDigit(line(0))) {

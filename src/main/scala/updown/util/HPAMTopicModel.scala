@@ -36,8 +36,8 @@ class HPAMTopicModel(tweets: List[GoldLabeledTweet], numSuperTopics: Int, numSub
   }
 
   def getTopics: List[Topic] = {
-    val supers = model.getSuperTopicPriorWeights
-    val subs = model.getSuperSubTopicPriorWeights
+    val supers = Array()// TODO FIXME model.getSuperTopicPriorWeights
+    val subs = Array()// TODO FIXME model.getSuperSubTopicPriorWeights
     var result = Topic(Map("alpha"->1.0), Map(("TOPIC_1" -> supers(1)), ("TOPIC_2" -> supers(2)), ("TOPIC_3" -> supers(3)))) //root
     for (i <- 0 until numSuperTopics) {
       val sub = subs(i)
@@ -71,8 +71,8 @@ class HPAMTopicModel(tweets: List[GoldLabeledTweet], numSuperTopics: Int, numSub
    * Since PAM makes a tree of topics, we just start with the supers and then append each of the children
    */
   def getTopicPriors = {
-    val supers: Array[Double] = model.getSuperTopicPriorWeights
-    val subs: Array[Array[Double]] = model.getSuperSubTopicPriorWeights
+    val supers: Array[Double] = Array()// TODO FIXME model.getSuperTopicPriorWeights
+    val subs: Array[Array[Double]] = Array()// TODO FIXME model.getSuperSubTopicPriorWeights
     var result = supers.toList
     for (i <- 0 until numSuperTopics) {
       result = result ::: subs(i).toList
@@ -92,7 +92,7 @@ class HPAMTopicModel(tweets: List[GoldLabeledTweet], numSuperTopics: Int, numSub
 
   def getLabelsToTopicDists = {
     (for ((label, indexList: List[Int]) <- _labelToIndices) yield {
-      (label, indexList.map((i) => getTopicVector(model.getTopicsForDoc(i))))
+      (label, indexList.map((i) => getTopicVector(Array())))// TODO FIXME model.getTopicsForDoc(i))))
     }).toMap
   }
 
@@ -114,7 +114,7 @@ class HPAMTopicModel(tweets: List[GoldLabeledTweet], numSuperTopics: Int, numSub
         for (feature <- features) {
           featureSequence.add(feature)
         }
-        getTopicVector(model.topicInferenceLast(featureSequence, numIterations))
+        getTopicVector(Array())// TODO FIXME model.topicInferenceLast(featureSequence, numIterations))
     }
   }
 

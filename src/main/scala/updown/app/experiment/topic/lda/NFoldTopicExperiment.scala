@@ -11,7 +11,7 @@ import java.util.Arrays
 
 abstract class NFoldTopicExperiment extends NFoldExperiment {
   var iterations = 1000
-  var alpha = 30
+  var alpha = 30.0
   var beta = 0.1
   var numTopics = 3
   val fileSeparator = System.getProperty("file.separator")
@@ -19,7 +19,7 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
   var childProcesses = List[Process]()
 
   val iterationOption = parser.option[Int](List("iterations"), "INT", "the number of iterations for the training the topicModel")
-  val alphaOption = parser.option[Int](List("alpha"), "INT", "the symmetric alpha hyperparameter for LDA")
+  val alphaOption = parser.option[Double](List("alpha"), "INT", "the symmetric alpha hyperparameter for LDA")
   val betaOption = parser.option[Double](List("beta"), "DOUBLE", "the symmetric beta hyperparameter for LDA")
   val numTopicsOption = parser.option[Int](List("numTopics"), "INT", "the number of topics for LDA")
 
@@ -111,7 +111,7 @@ abstract class NFoldTopicExperiment extends NFoldExperiment {
     }
 
     // Thanks to a bug in Mallet, we have to cap alphaSum
-    val alphaSum = 300 min (alpha * numTopics)
+    val alphaSum = 300.0 min (alpha * numTopics)
 
 
     logger.debug("alphaSum: " + alphaSum)

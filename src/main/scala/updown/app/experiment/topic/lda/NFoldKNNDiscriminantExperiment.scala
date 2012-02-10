@@ -4,8 +4,8 @@ import updown.data.{SystemLabeledTweet, GoldLabeledTweet, SentimentLabel}
 import updown.util.TopicModel
 import scala.Array
 import updown.app.experiment.topic.util.KNNDiscriminant
-import org.clapper.argot.ArgotConverters._
 object NFoldKNNDiscriminantExperiment extends NFoldTopicExperiment with KNNDiscriminant {
+  import org.clapper.argot.ArgotConverters._
   val DEFAULT_K = 11
   val kOption = parser.option[Int](List("k","numNearestNeighbors"), "INT", "the number of nearest neighbors to consider in choosing a label")
 

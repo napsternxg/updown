@@ -42,18 +42,19 @@ class DMRTopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
   }
 
   def getTopics: List[Topic] = {
-    val topicPriors = model.getParameterValues
-    (for ((priorMap, i) <- topicPriors.zipWithIndex) yield {
+    val topicPriors = List()// TODO FIXME model.getParameterValues
+/* TODO FIXME   (for ((priorMap, i) <- topicPriors.zipWithIndex) yield {
       val wordDistributionMap = model.getSortedTopicWords(i)
         .filter(idSorter => idSorter.getWeight > 0)
         .map(idSorter => (alphabet.lookupObject(idSorter.getID).toString, idSorter.getWeight))
         .toMap
       Topic(priorMap.toMap.map{case(s,d)=>(s.toString,d.asInstanceOf[Double])}, wordDistributionMap)
-    }).toList
+    }).toList*/
+    Nil
   }
 
   def getTopicPriors = {
-    model.getParameterValues.map(parameterMap=>parameterMap.get("label").asInstanceOf[Double]).toArray
+    Array()// TODO FIXME model.getParameterValues.map(parameterMap=>parameterMap.get("label").asInstanceOf[Double]).toArray
   }
 
   def getIdsToTopicDist = {
@@ -77,7 +78,7 @@ class DMRTopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
         for (feature <- features) {
           featureSequence.add(feature)
         }
-        getTopicVector(model.inferTopics(featureSequence,1000))
+        Array()// TODO FIXME getTopicVector(model.inferTopics(featureSequence,1000))
     }
 //    Array[Double]()
   }

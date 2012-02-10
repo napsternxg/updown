@@ -70,15 +70,12 @@ abstract class NFoldExperiment extends Experiment {
           logger.debug("starting run " + experimentalRun)
           val result = doExperiment(trainSet, testSet)
           logger.debug("ending run " + experimentalRun)
-//          logger.info("Intermediate:")
-//          report(inputFile.toString, result)
           result
         }).toList
 
       val result = results.flatten
       logger.info("Final Result:")
       report(inputFile.toString,result)
-//      println("\n" + Statistics.averageResults("%d-fold Average".format(nFolds), results).toString)
       logger.debug("running cleanup code")
     }
     catch {

@@ -22,7 +22,7 @@ object RePreprocToLDATopicVectors extends GenericPreprocessor {
   val betaOption = parser.option[Double](List("beta"), "DOUBLE", "the symmetric beta hyperparameter for LDA")
   val numTopicsOption = parser.option[Int](List("numTopics"), "INT", "the number of topics for LDA")
 
-  def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
+  def getInstanceIterator(file: File): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
     if (iterationOption.value.isDefined) {
       iterations = iterationOption.value.get
     }
@@ -38,22 +38,16 @@ object RePreprocToLDATopicVectors extends GenericPreprocessor {
 
     // Thanks to a bug in Mallet, we have to cap alphaSum
     val alphaSum = 300 min (alpha * numTopics)
-    val tweets = TweetFeatureReader(fileName)
+    val tweets = TweetFeatureReader(file.getAbsolutePath)
     val model: TopicModel = new LDATopicModel(tweets, numTopics, iterations, alphaSum, beta)
 
-    try {
-      (for (tweet <- tweets) yield
-        (tweet.id,
-          tweet.userid,
-          Left(tweet.goldLabel),
-          model.inferTopics(tweet).mkString(" ")
-          )
-        ).iterator
-    } catch {
-      case e: MatchError =>
-        logger.error("Couldn't figure out what sentiment '%s' is supposed to be." +
-          " Try using 'pos', 'neg', or 'neu'. Skipping %s...".format(polarity, fileName))
-        Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)]()
-    }
+    (for (tweet <- tweets) yield
+      (tweet.id,
+        tweet.userid,
+        Left(tweet.goldLabel),
+        model.inferTopics(tweet).mkString(" ")
+        )
+      ).iterator
+
   }
 }
