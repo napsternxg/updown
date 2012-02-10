@@ -33,9 +33,9 @@ object PreprocHCRTweets extends GenericPreprocessor {
     }
   }
 
-  def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
+  def getInstanceIterator(file:File): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
     // Thanks for not giving us an iterator
-    val reader = new CSVReader(new InputStreamReader(new FileInputStream(new File(inputFile.value.get)), "UTF-8"))
+    val reader = new CSVReader(new InputStreamReader(new FileInputStream(file),"UTF-8"))
     var fields = reader.readNext() // burn the header column
     fields = reader.readNext()
     var lines = List[List[String]]()

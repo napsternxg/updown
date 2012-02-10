@@ -65,7 +65,9 @@ class LDATopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
   def getLabelsToTopicDists = {
     val result = scala.collection.mutable.Map[SentimentLabel.Type,List[Array[Double]]]().withDefaultValue(Nil)
     for (topicAssignment <- model.getData) {
-      val label = topicAssignment.instance.getTarget.asInstanceOf[SentimentLabel.Type]
+      val target = topicAssignment.instance.getTarget
+      val value = target.asInstanceOf[FeatureVector].getValues()(0)
+      val label = SentimentLabel.fromDouble(value)
       result(label) = model.getTopicProbabilities(topicAssignment.topicSequence) :: result(label)
     }
     result.toMap // immutize

@@ -9,23 +9,22 @@ import updown.preproc.GenericPreprocessor
  * whose polarity is signified by the label given to the directory in the inputOption
  */
 object PreprocPangLeePolarityCorpus extends GenericPreprocessor {
+  val PathRE = "(.*)/(neg|pos)/([^/]+)$".r
 
-  def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
-    try {
-      val dir = new File(fileName)
-      assert(dir.isDirectory)
-      (for (file: File <- dir.listFiles()) yield
-        (file.getName,
-          "reviewer",
-          Left(SentimentLabel.figureItOut(polarity)),
-          scala.io.Source.fromFile(file, "ISO-8859-1").getLines().mkString(" ").replace("|", "")
-          )
-        ).iterator
-    } catch {
-      case e: MatchError =>
-        logger.error("Couldn't figure out what sentiment '%s' is supposed to be." +
-          " Try using 'pos', 'neg', or 'neu'. Skipping %s...".format(polarity, fileName))
-        Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)]()
+  def getInstanceIterator(file: File): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
+    val dir = file
+    assert(dir.isDirectory)
+    val PathRE(_, label, fname) = dir.getAbsolutePath
+    val polarity = label match {
+      case "pos" => SentimentLabel.Positive
+      case "neg" => SentimentLabel.Negative
     }
+    (for (file: File <- dir.listFiles()) yield
+      (file.getName,
+        "reviewer",
+        Left(polarity),
+        scala.io.Source.fromFile(file, "ISO-8859-1").getLines().mkString(" ").replace("|", "")
+        )
+      ).iterator
   }
 }

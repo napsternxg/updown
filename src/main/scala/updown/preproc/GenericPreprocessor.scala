@@ -8,7 +8,9 @@ import collection.immutable.List._
 import java.io.{File, FileOutputStream, OutputStreamWriter}
 
 abstract class GenericPreprocessor extends Logging {
+
   import ArgotConverters._
+
   var pipeStages: Map[String, (List[String]) => List[String]] =
     Map[String, (List[String]) => List[String]](
       ("lowerCase" -> TokenizationPipes.toLowercase),
@@ -22,7 +24,15 @@ abstract class GenericPreprocessor extends Logging {
     )
   val defaultPipeline = "twokenize|removeStopwords"
   val parser = new ArgotParser("updown run updown.preproc.PreprocStanfordTweets", preUsage = Some("Updown"))
-  val inputFile = parser.option[String](List("i", "input"), "input", "path to data file")
+  val inputFiles = parser.multiParameter[File]("input files", "input files", true) {
+    (s, op) =>
+      val f = new File(s)
+      if (f.isFile) {
+        f
+      } else {
+        parser.usage("input %s was not a file.".format(s))
+      }
+  }
   val stopListFile = parser.option[String](List("s", "stoplist"), "stoplist", "path to stoplist file")
   val startId = parser.option[Int](List("start-id"), "ID", "id at which to start numbering lines")
   val textPipeline = parser.option[String](List("textPipeline"), "PIPELINE",
@@ -33,36 +43,13 @@ abstract class GenericPreprocessor extends Logging {
   val featureFile = parser.option[String](List("f", "feature"), "feature", "feature file")
 
 
-  def getInstanceIterator(fileName: String, polarity: String): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)]
+  def getInstanceIterator(file: File): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)]
 
-  def getInputIterator(inputOption: Option[String]): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
+  def getInputIterator(files: Seq[File]): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
     logger.debug("entering getInputIterator")
-    inputOption match {
-      case Some(fileNameList) =>
-        (for ((name, polarity) <- fileNameList.split("\\s*,\\s*").map((pair) => {
-          val plist = pair.split("\\s*->\\s*")
-          if (plist.length > 1) {
-            (plist(0) -> plist(1))
-          } else {
-            logger.debug("the polarity for %s is not included on the command line, expecting it in the text.".format(plist(0)))
-            (plist(0) -> SentimentLabel.toEnglishName(SentimentLabel.Unknown))
-          }
-        }
-        ).toMap) yield {
-          getInstanceIterator(name, polarity)
-        }).iterator.flatten
-
-      case None =>
-        (for (line <- scala.io.Source.stdin.getLines()) yield {
-          line.split("|") match {
-            case Array(id, reviewer, polarityString, text) =>
-              (id, reviewer, Left(SentimentLabel.figureItOut(polarityString)), text)
-            case _ =>
-              logger.error("Input must be of the form id|reviewer|polarity|text.")
-              ("", "", Left(SentimentLabel.Abstained), "")
-          }
-        })
-    }
+    (for (file <- files) yield {
+      getInstanceIterator(file)
+    }).iterator.flatten
   }
 
   def runThroughPipeLine(text: String, pipeLine: List[(List[String]) => List[String]]): List[String] = {
@@ -90,8 +77,7 @@ abstract class GenericPreprocessor extends Logging {
       before()
       // SET UP IO
 
-      logger.debug("Inputfile: %s".format(inputFile.value))
-      val inputLines = getInputIterator(inputFile.value)
+      val inputLines = getInputIterator(inputFiles.value)
       val targetWriter = new OutputStreamWriter(
         targetFile.value match {
           case Some(fileName) => new FileOutputStream(new File(fileName))
@@ -183,7 +169,7 @@ abstract class GenericPreprocessor extends Logging {
       }
       featureWriter.flush()
       targetWriter.flush()
-      logger.info("Stats:\n"+
+      logger.info("Stats:\n" +
         "Preprocessed " + numLines + " tweets. " +
         "Assigned %d labels.\n".format(numLabels) +
         (for ((label, count) <- numClasses if label != SentimentLabel.Abstained) yield
@@ -193,9 +179,9 @@ abstract class GenericPreprocessor extends Logging {
             count,
             count.toFloat / numLabels * 100)).mkString("\n") +
         "\n\n%20s: %10d instances"
-                .format(
-                "skipped",
-                numClasses(SentimentLabel.Abstained))
+          .format(
+          "skipped",
+          numClasses(SentimentLabel.Abstained))
       )
       // These may close stdout, so make sure they are last!
       featureWriter.close()
