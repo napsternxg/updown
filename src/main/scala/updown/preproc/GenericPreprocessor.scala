@@ -20,7 +20,11 @@ abstract class GenericPreprocessor extends Logging {
       ("twokenizeSkipGtOneGrams" -> TokenizationPipes.twokenizeSkipGtOneGrams),
       ("filterAlpha") -> TokenizationPipes.filterOnRegex("\\p{Alpha}+"),
       ("filterAlphaQuote") -> TokenizationPipes.filterOnRegex("(\\p{Alpha}|')+"),
-      ("splitSpace" -> TokenizationPipes.splitOnDelimiter(" "))
+      ("splitSpace" -> TokenizationPipes.splitOnDelimiter(" ")),
+      ("removeStopwords") -> {
+        (s: List[String]) =>
+          throw new Error("Not implemented. This should have been replaced in the main method.")
+      }
     )
   val defaultPipeline = "twokenize|removeStopwords"
   val parser = new ArgotParser("updown run updown.preproc.PreprocStanfordTweets", preUsage = Some("Updown"))
@@ -42,6 +46,7 @@ abstract class GenericPreprocessor extends Logging {
   val targetFile = parser.option[String](List("t", "target"), "target", "target file")
   val featureFile = parser.option[String](List("f", "feature"), "feature", "feature file")
 
+  val vocabSize = parser.option[Int]("vocabSize", "SIZE", "The number of words to allow in the vocabulary.")
 
   def getInstanceIterator(file: File): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)]
 
@@ -68,6 +73,19 @@ abstract class GenericPreprocessor extends Logging {
     writer.write("%s|%s\n".format(id, target))
   }
 
+  def getVocabulary(size: Int, pipeline: List[(List[String]) => List[String]], inputs: Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)]): Set[String] = {
+    val counts = scala.collection.mutable.Map[String, Int]().withDefaultValue(0)
+    for ((_, _, _, text) <- inputs) {
+      val outputText = runThroughPipeLine(text, pipeline).map((s) => s.replaceAll(",", "-COMMA-").replaceAll("\\|", "-PIPE-"))
+      for (token <- outputText) {
+        counts(token) = counts(token) + 1
+      }
+    }
+    counts.toList.sortBy(_._2).reverse.map {
+      case (s, c) => s
+    }.take(size).toSet
+  }
+
   def before() {}
 
   def main(args: Array[String]) {
@@ -76,6 +94,7 @@ abstract class GenericPreprocessor extends Logging {
       parser.parse(args)
       before()
       // SET UP IO
+
 
       val inputLines = getInputIterator(inputFiles.value)
       val targetWriter = new OutputStreamWriter(
@@ -131,10 +150,19 @@ abstract class GenericPreprocessor extends Logging {
       var numSkipped = 0
       var numClasses = scala.collection.mutable.Map[SentimentLabel.Type, Int]().withDefaultValue(0)
       var numLabels = 0
+      var numTokens = 0
       // RUN
+      val vocab = vocabSize.value match {
+        case Some(i: Int) => getVocabulary(i, pipeline, getInputIterator(inputFiles.value))
+        case _ => Set[String]()
+      }
       for ((id, reviewer, polarityChoice, text) <- inputLines) {
         val outputID = if (id == "") (idNumStart + numLines).toString else id
-        val outputText = runThroughPipeLine(text, pipeline).map((s) => s.replaceAll(",", "-COMMA-").replaceAll("\\|", "-PIPE-")).mkString(",")
+        val outputTextList = runThroughPipeLine(text, pipeline)
+          .map((s) => s.replaceAll(",", "-COMMA-").replaceAll("\\|", "-PIPE-"))
+          .filter(s=>vocab.size==0 || vocab.contains(s))
+        numTokens += outputTextList.length
+        val outputText = outputTextList.mkString(",")
         polarityChoice match {
           case Left(polarity) =>
             // no targets
@@ -171,6 +199,7 @@ abstract class GenericPreprocessor extends Logging {
       targetWriter.flush()
       logger.info("Stats:\n" +
         "Preprocessed " + numLines + " tweets. " +
+        "Used " + numTokens + " tokens. " +
         "Assigned %d labels.\n".format(numLabels) +
         (for ((label, count) <- numClasses if label != SentimentLabel.Abstained) yield
           "%20s: %10d instances (%2.2f%%)"

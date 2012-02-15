@@ -32,6 +32,7 @@ object PreprocMDSDReviews extends GenericPreprocessor {
   }
 
   def getInstanceIterator(file:File): Iterator[(String, String, Either[SentimentLabel.Type, Map[String, SentimentLabel.Type]], String)] = {
+    println(file.getAbsolutePath)
     (for ((line, index) <- scala.io.Source.fromFile(file, "UTF-8").getLines().zipWithIndex) yield {
       val (tokens, label) = getTokensFromLine(line)
       val purgedTokens = tokens.filter((s) => true)
