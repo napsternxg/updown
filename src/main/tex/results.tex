@@ -1,0 +1,84 @@
+\documentclass[letterpaper]{article}
+\usepackage{amssymb,amsmath,amsthm, verbatim}
+
+%result variabes
+\include{results-variables}
+
+\author{John Roesler}
+\title{Tables for Thesis}
+\begin{document}
+\maketitle
+\begin{table}[htbp]
+    \begin{center}
+        \begin{tabular}{ | l || c  c  c  c  c  c | }
+            \hline
+            Experiment & MDSD:Book   & MDSD:DVD & MDSD:Elec & MDSD:Kitchen & HCR & Shamma \\
+            N          &\nNbMdsdBooks  &\nNbMdsdDvd &\nNbMdsdElec &\nNbMdsdKitchen &\nNbHcr &\nNbShamma \\ \hline \hline
+            MPQA       &\accLexMdsdBooks  &\accLexMdsdDvd &\accLexMdsdElec &\accLexMdsdKitchen &\accLexHcr &\accLexShamma \\
+            MPQA bigrams&\accLexMdsdBooksBi  &\accLexMdsdDvdBi &\accLexMdsdElecBi &\accLexMdsdKitchenBi &\accLexHcrBi &\accLexShammaBi \\
+            NBayes       &\accNbMdsdBooks  &\accNbMdsdDvd &\accNbMdsdElec &\accNbMdsdKitchen &\accNbHcr &\accNbShamma \\
+            NBayes bigrams&\accNbMdsdBooksBi  &\accNbMdsdDvdBi &\accNbMdsdElecBi &\accNbMdsdKitchenBi &\accNbHcrBi &\accNbShammaBi \\
+            Maxent       &\accMeMdsdBooks  &\accMeMdsdDvd &\accMeMdsdElec &\accMeMdsdKitchen &\accMeHcr &\accMeShamma \\
+            Maxent bigrams&\accMeMdsdBooksBi  &\accMeMdsdDvdBi &\accMeMdsdElecBi &\accMeMdsdKitchenBi &\accMeHcrBi &\accMeShammaBi \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \caption{Overall Accuracy}
+    \label{table:oacc}
+\end{table}
+
+\begin{table}[htbp]
+    \begin{center}
+        \begin{tabular}{ | l || c  c  c  c  c  c | }
+            \hline
+            Experiment & MDSD:Book   & MDSD:DVD & MDSD:Elec & MDSD:Kitchen & HCR & Shamma \\
+            N          &\nNbMdsdBooks  &\nNbMdsdDvd &\nNbMdsdElec &\nNbMdsdKitchen &\nNbHcr &\nNbShamma \\ \hline \hline
+            MPQA       &\fposLexMdsdBooks  &\fposLexMdsdDvd &\fposLexMdsdElec &\fposLexMdsdKitchen &\fposLexHcr &\fposLexShamma \\
+            MPQA bigrams&\fposLexMdsdBooksBi  &\fposLexMdsdDvdBi &\fposLexMdsdElecBi &\fposLexMdsdKitchenBi &\fposLexHcrBi &\fposLexShammaBi \\
+            NBayes       &\fposNbMdsdBooks  &\fposNbMdsdDvd &\fposNbMdsdElec &\fposNbMdsdKitchen &\fposNbHcr &\fposNbShamma \\
+            NBayes bigrams&\fposNbMdsdBooksBi  &\fposNbMdsdDvdBi &\fposNbMdsdElecBi &\fposNbMdsdKitchenBi &\fposNbHcrBi &\fposNbShammaBi \\
+            Maxent       &\fposMeMdsdBooks  &\fposMeMdsdDvd &\fposMeMdsdElec &\fposMeMdsdKitchen &\fposMeHcr &\fposMeShamma \\
+            Maxent bigrams&\fposMeMdsdBooksBi  &\fposMeMdsdDvdBi &\fposMeMdsdElecBi &\fposMeMdsdKitchenBi &\fposMeHcr &\fposMeShammaBi \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \caption{F1-Score for POS}
+    \label{table:f1pos}
+\end{table}
+
+\begin{table}[htbp]
+    \begin{center}
+        \begin{tabular}{ | l || c  c  c  c  c  c | }
+            \hline
+            Experiment & MDSD:Book   & MDSD:DVD & MDSD:Elec & MDSD:Kitchen & HCR & Shamma \\
+            N          &\nNbMdsdBooks  &\nNbMdsdDvd &\nNbMdsdElec &\nNbMdsdKitchen &\nNbHcr &\nNbShamma \\ \hline \hline
+            MPQA       &\fnegLexMdsdBooks  &\fnegLexMdsdDvd &\fnegLexMdsdElec &\fnegLexMdsdKitchen &\fnegLexHcr &\fnegLexShamma \\
+            MPQA bigrams&\fnegLexMdsdBooksBi  &\fnegLexMdsdDvdBi &\fnegLexMdsdElecBi &\fnegLexMdsdKitchenBi &\fnegLexHcrBi &\fnegLexShammaBi \\
+            NBayes       &\fnegNbMdsdBooks  &\fnegNbMdsdDvd &\fnegNbMdsdElec &\fnegNbMdsdKitchen &\fnegNbHcr &\fnegNbShamma \\
+            NBayes bigrams&\fnegNbMdsdBooksBi  &\fnegNbMdsdDvdBi &\fnegNbMdsdElecBi &\fnegNbMdsdKitchenBi &\fnegNbHcrBi &\fnegNbShammaBi \\
+            Maxent       &\fnegMeMdsdBooks  &\fnegMeMdsdDvd &\fnegMeMdsdElec &\fnegMeMdsdKitchen &\fnegMeHcr &\fnegMeShamma \\
+            Maxent bigrams&\fnegMeMdsdBooksBi  &\fnegMeMdsdDvdBi &\fnegMeMdsdElecBi &\fnegMeMdsdKitchenBi &\fnegMeHcrBi &\fnegMeShammaBi \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \caption{F1-Score for NEG}
+    \label{table:f1neg}
+\end{table}
+
+\begin{table}[htbp]
+    \begin{center}
+        \begin{tabular}{ | r || c  c  c | }
+            \hline
+            N & \multicolumn{3}{|l|}{1446}   \\
+            Accuracy & \multicolumn{3}{|l|}{0.90}   \\ \hline \hline
+            Label & Precision & Recall & F-Score \\ \hline
+            POS   & 1.00      & 0.96   & 0.98    \\
+            NEG   & 0.82      & 0.94   & 0.87    \\
+            NEU   & 0.89      & 0.78   & 0.83    \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \caption{Baseline--Maxent}
+    \label{table:cer2kbaseline}
+\end{table}
+\end{document}
