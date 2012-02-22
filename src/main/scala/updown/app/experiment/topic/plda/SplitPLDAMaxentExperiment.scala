@@ -145,17 +145,30 @@ object SplitPLADMaxentExperiment extends SplitExperiment with MaxentDiscriminant
 
     // Trains the model, writing to the given output path
     val model = TrainCVB0PLDA(modelParams, trainDataset, output = modelPath, maxIterations = getNumIterations);
-    model.getTopicTermDistribution(0)
-    model.pTopicTerm(0,0)
-    model.termIndex
-    model.numTerms
-    model.numTopics
+
     val modelTopicTermMatrix = (for (i <- 0 until model.numTopics) yield {
       model.getTopicTermDistribution(i)
     }).toArray
     val trainMap = trainSet.map(tweet => (tweet.id, tweet)).toMap
 
-    val trainDistributions = InferCVB0PLDADocumentTopicDistributions(model, trainDataset).toList
+    val trainDistributions = (for (doc <- trainDataset.iterator) yield {
+      val termTopics = (for (term <- doc.terms) yield {
+        val probs = Array.ofDim[Double](model.numTopics)
+        for (topic <- 0 until model.numTopics) {
+          probs(topic) += modelTopicTermMatrix(topic)(term)
+        }
+        probs.indexOf(probs.max)
+      })
+      val topicProportions = Array.ofDim[Double](model.numTopics)
+      for (termTopic <- termTopics) {
+        topicProportions(termTopic) += 1.0
+      }
+      for (topic <- 0 until model.numTopics) {
+        topicProportions(topic) /= doc.terms.length
+      }
+      (doc.id, topicProportions)
+
+    }).toList
     val labelsToTopicDists = scala.collection.mutable.Map[SentimentLabel.Type, List[Array[Double]]]().withDefaultValue(Nil)
     for ((outId, dist) <- trainDistributions) yield {
       val GoldLabeledTweet(inId, inUID, _, inLabel) = trainMap(outId)
@@ -184,7 +197,7 @@ object SplitPLADMaxentExperiment extends SplitExperiment with MaxentDiscriminant
         topicProportions(topic) += 1.0
       }
       for (topic <- 0 until model.numTopics) {
-        topicProportions(topic) /= model.numTopics
+        topicProportions(topic) /= doc.terms.length
       }
       val GoldLabeledTweet(inId, inUID, inFeatures, inLabel) = testMap(doc.id)
       val (outLabel: String, outcomes: String) = discriminantFn(topicProportions.map(d => d.toFloat))
