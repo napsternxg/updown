@@ -15,27 +15,27 @@ class LDATopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
   model.addInstances(instanceList)
   model.setNumThreads(numTopics max MAX_THREADS)
   model.setNumIterations(numIterations)
-//  ParallelTopicModel.logger.setLevel(Level.OFF)
+  //  ParallelTopicModel.logger.setLevel(Level.OFF)
   model.estimate()
 
   def getTopics: List[Topic] = {
     val priors: Array[Double] = getTopicPriors
-    val topicsToAlphaIds = scala.collection.mutable.Map[Int,List[(Int,Double)]]()
+    val topicsToAlphaIds = scala.collection.mutable.Map[Int, List[(Int, Double)]]()
 
     val wordsTopicsCounts = (for ((topicCounts, typeIndex) <- model.typeTopicCounts.zipWithIndex) yield {
       val word = alphabet.lookupObject(typeIndex).toString
       (for (topicCount <- topicCounts) yield {
         val topic = topicCount & model.topicMask
         val count = topicCount >> model.topicBits
-        (word,topic,count)
+        (word, topic, count)
       }).iterator
     }).iterator.flatten.toList
 
 
     val res = (for (i <- 0 until numTopics) yield {
-      val wordCounts = wordsTopicsCounts.filter((triple)=>(triple._2==i && triple._3!=0))
-      val sum = wordCounts.map((triple)=>triple._3).reduce(_ + _)
-      Topic(Map(("alpha"->priors(i))), wordCounts.map((triple)=>(triple._1->(triple._3.toDouble/sum))).toMap)
+      val wordCounts = wordsTopicsCounts.filter((triple) => (triple._2 == i && triple._3 != 0))
+      val sum = wordCounts.map((triple) => triple._3).reduce(_ + _)
+      Topic(Map(("alpha" -> priors(i))), wordCounts.map((triple) => (triple._1 -> (triple._3.toDouble / sum))).toMap)
     }).toList
 
     res
@@ -63,25 +63,28 @@ class LDATopicModel(tweets: List[GoldLabeledTweet], numTopics: Int, numIteration
   }
 
   def getLabelsToTopicDists = {
-    val result = scala.collection.mutable.Map[SentimentLabel.Type,List[Array[Double]]]().withDefaultValue(Nil)
+    val result = scala.collection.mutable.Map[SentimentLabel.Type, List[Array[Double]]]().withDefaultValue(Nil)
     for (topicAssignment <- model.getData) {
-      val target = topicAssignment.instance.getTarget
-      val value = target.asInstanceOf[FeatureVector].getValues()(0)
-      val label = SentimentLabel.fromDouble(value)
-      result(label) = model.getTopicProbabilities(topicAssignment.topicSequence) :: result(label)
+      val name = topicAssignment.instance.getName()
+      if (name != updown.app.experiment.topic.Constants.IGNORE_INSTANCE) {
+        val target = topicAssignment.instance.getTarget
+        val value = target.asInstanceOf[FeatureVector].getValues()(0)
+        val label = SentimentLabel.fromDouble(value)
+        result(label) = model.getTopicProbabilities(topicAssignment.topicSequence) :: result(label)
+      }
     }
     result.toMap // immutize
   }
 
   def inferTopics(tweet: GoldLabeledTweet) = {
     val instance = tweet match {
-        case GoldLabeledTweet(id, userid, features, goldLabel) =>
-          val featureSequence = new FeatureSequence(alphabet, features.length)
-          for (feature <- features) {
-            featureSequence.add(feature)
-          }
-          new Instance(featureSequence, goldLabel, id, null)
-      }
+      case GoldLabeledTweet(id, userid, features, goldLabel) =>
+        val featureSequence = new FeatureSequence(alphabet, features.length)
+        for (feature <- features) {
+          featureSequence.add(feature)
+        }
+        new Instance(featureSequence, goldLabel, id, null)
+    }
     model.getInferencer.getSampledDistribution(instance, numIterations, 1, 1)
   }
 

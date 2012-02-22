@@ -7,6 +7,8 @@ import java.io.{FileWriter, BufferedWriter, File}
 import updown.util.{WordleUtils, LDATopicModel, TopicModel}
 import updown.app.experiment.SplitExperiment
 import java.util.Arrays
+import updown.data.io.TweetFeatureReader._
+import updown.data.io.TweetFeatureReader
 
 abstract class SplitLDAExperiment extends SplitExperiment {
   var iterations = 1000
@@ -21,6 +23,8 @@ abstract class SplitLDAExperiment extends SplitExperiment {
   val alphaOption = parser.option[Double](List("alpha"), "INT", "the symmetric alpha hyperparameter for LDA")
   val betaOption = parser.option[Double](List("beta"), "DOUBLE", "the symmetric beta hyperparameter for LDA")
   val numTopicsOption = parser.option[Int](List("numTopics"), "INT", "the number of topics for LDA")
+  val extraTopicTrainingSetOption = parser.multiOption[String]("T","FILE",
+    "extra inputs to be used to train the topic model, not the classifier.")
 
   val outputOption = parser.option[String](List("o", "output"), "DIR", "the directory to dump topics into")
   val wordleOption = parser.flag[Boolean](List("w", "wordle"), "generate wordles for the topics (requires -o DIR) " +
@@ -116,7 +120,12 @@ abstract class SplitLDAExperiment extends SplitExperiment {
 
 
     logger.debug("alphaSum: " + alphaSum)
-    val model: TopicModel = new LDATopicModel(trainSet, numTopics, iterations, alphaSum, beta)
+    val extraTopicTrainSet: List[GoldLabeledTweet] =
+      extraTopicTrainingSetOption.value.toList.flatMap((s)=>TweetFeatureReader(s)).map{
+        case GoldLabeledTweet(id,uid,feat,label) => GoldLabeledTweet(updown.app.experiment.topic.Constants.IGNORE_INSTANCE,uid,feat,label)
+      }
+
+    val model: TopicModel = new LDATopicModel(trainSet++extraTopicTrainSet, numTopics, iterations, alphaSum, beta)
     logger.debug("topic distribution:\n     :" + Arrays.toString(model.getTopicPriors))
     logger.debug({
       val labelToTopicDist = model.getLabelsToTopicDist

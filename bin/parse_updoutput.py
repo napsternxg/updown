@@ -1,22 +1,36 @@
 #!/usr/bin/python
+import time
 import re, sys
 
 DEBUG=False
 NaN = float('nan')
 statRE=re.compile(r"^STAT: (\S+) (\S+) (.*)")
-(fold, prep, exp, n, acc, fpos, fneg) = (None,)*7
 skip=True
 folds = set()
 tables = {}
+(fold, prep, exp, n, acc, fpos, fneg) = (None,)*7
+
+def reset():
+  (fold, prep, exp, n, acc, fpos, fneg) = (None,)*7
+
 
 def debug(s):
   if DEBUG:
     print('>'+str(s))
 
-for line in sys.stdin.readlines():
+lastline = ""
+instr = open(sys.stdin.fileno(),'r',encoding='utf8')
+for line in instr.readlines():
+  #print(lastline)
+  #print((fold,prep,exp,n,acc,fpos,fneg))
+  #print()
+  #time.sleep(1)
   line = line.rstrip()
+  lastline = line
   m=statRE.match(line)
   if (m):
+    #print("setting experiment")
+    (fold, prep, exp, n, acc, fpos, fneg) = (None,)*7
     (fold, prep, exp) = m.groups()
     folds.add(fold)
     if not prep in tables:
@@ -30,42 +44,44 @@ for line in sys.stdin.readlines():
         tables[prep][exp][i][fold] = NaN
     skip=False
     continue
-  if re.match(r"^Per",line):
+  if re.match(r"^Per-",line):
+    #print("setting skip")
     skip=True
     continue
-  if (skip): continue
+  if (skip): 
+    #print("skipping")
+    continue
   m= re.match(r"^\s+N\s+(\d+)",line)
   if (m):
+    #print("setting n")
     (n,)=m.groups()
     tables[prep][exp]['n'][fold] = float(n)
     debug(tables[prep][exp]['n'])
     continue
   m= re.match(r"^\s+Accuracy\s+(\d+.\d+)",line)
   if (m):
+    #print("setting acc")
     (acc,)=m.groups()
     tables[prep][exp]['acc'][fold] = float(acc)
     debug(tables[prep][exp]['acc'])
     continue
   m= re.match(r"^\s+positive .* (\d+\.\d+)$",line)
   if (m):
+    #print("setting fpos")
     (fpos,)=m.groups()
     tables[prep][exp]['fpos'][fold] = float(fpos)
     debug(tables[prep][exp]['fpos'])
     continue
   m= re.match(r"^\s+negative .* (\d+\.\d+)$",line)
   if (m):
+    #print("setting fneg")
     (fneg,)=m.groups()
     tables[prep][exp]['fneg'][fold] = float(fneg)
     debug(tables[prep][exp]['fneg'])
     continue
-  #m= re.match(r"^Exception",line)
-  #if (m):
-    #tables[prep][exp]['n'] = NaN
-    #tables[prep][exp]['acc'] = NaN
-    #tables[prep][exp]['fpos'] = NaN
-    #tables[prep][exp]['fneg'] = NaN
-    #debug("exception")
-    #continue
+  #print("ignored")
+
+#sys.exit(1)
 
 prep_set = set(tables.keys())
 exp_set = set()

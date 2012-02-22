@@ -122,6 +122,10 @@ elif [ $CMD = 'junto' ]; then
 
      $SCALA_COMMAND updown.app.JuntoClassifier $*
 
+elif [ $CMD = 'classpath' ]; then
+
+     echo $CP
+
 else  
 
     CLASS=

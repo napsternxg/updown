@@ -28,10 +28,10 @@ object TrainMaxentModel {
 
   val DEFAULT_ITERATIONS = 10
   val DEFAULT_CUTOFF = 5
+  val DEFAULT_GAUSSIAN = 1.0
 
 
   def apply(fileName: String, iterations: Int, cutoff: Int): AbstractModel = {
-    GIS.PRINT_MESSAGES = false
     GIS.trainModel(MaxentEventStreamFactory(fileName), iterations, cutoff)
   }
 
@@ -42,24 +42,30 @@ object TrainMaxentModel {
     val dataStream = new PlainTextByLineDataStream(reader)
     val eventStream = new BasicEventStream(dataStream, ",")
 
-    GIS.PRINT_MESSAGES = false
     GIS.trainModel(eventStream, iterations, cutoff)
   }
 
   def trainWithStringIterator(iterator: Iterator[String], iterations: Int, cutoff: Int): AbstractModel = {
-    GIS.PRINT_MESSAGES = false
-
     GIS.trainModel(MaxentEventStreamFactory.getWithStringIterator(iterator), iterations, cutoff)
   }
 
-  //  def apply[String](iterator: Iterator[String]): AbstractModel = apply(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
+  def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet],
+                                        iterations: Int,
+                                        cutoff: Int,
+                                        gaussianSigma: Double): AbstractModel = {
+    System.out.println("training with sigma: "+gaussianSigma.toString)
+    GIS.trainModel(MaxentEventStreamFactory.getWithGoldLabeledTweetIterator(iterator),
+      iterations,
+      cutoff,
+      gaussianSigma)
+  }
 
   def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet], iterations: Int, cutoff: Int): AbstractModel = {
-    GIS.PRINT_MESSAGES = false
     GIS.trainModel(MaxentEventStreamFactory.getWithGoldLabeledTweetIterator(iterator), iterations, cutoff)
   }
 
-  def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet]): AbstractModel = trainWithGoldLabeledTweetIterator(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
+  def trainWithGoldLabeledTweetIterator(iterator: Iterator[GoldLabeledTweet]): AbstractModel =
+    trainWithGoldLabeledTweetIterator(iterator, DEFAULT_ITERATIONS, DEFAULT_CUTOFF)
 
   def main(args: Array[String]) {
     val parser = new ArgotParser("updown run updown.app.TrainMaxentModel", preUsage = Some("Updown"))
