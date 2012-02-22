@@ -85,20 +85,28 @@ object SplitPLADMaxentExperiment extends SplitExperiment with MaxentDiscriminant
     val os = new FileOutputStream(tmpFile)
     val out = new OutputStreamWriter(os, "utf8")
     for (GoldLabeledTweet(id, userid, features, goldLabel) <- set) {
-      out.write("\"%s\",\"%s\",\"%s\",\"%s\"\n".format(id.toString, userid.toString, features.mkString(" "), goldLabel.toString))
+      out.write("\"%s\",\"%s\",\"%s\",\"%s\"\n".format(
+        id.toString,
+        userid.toString,
+        features.mkString(" "),
+        if (name == "test") {
+          "1 -1"
+        } else {
+          goldLabel.toString
+        }))
     }
     out.flush()
     out.close()
     tmpFile
   }
 
-  def getLLDADataset(infile: File): LabeledLDADataset[(String, scala.Iterable[String], scala.Iterable[String])] = {
-    val trainSource = CSVFile(infile) ~> IDColumn(1)
+  private val _tokenizer = {
+    SimpleEnglishTokenizer() ~> // tokenize on space and punctuation
+      MinimumLengthFilter(3) // take terms with >=3 characters
+  }
 
-    val tokenizer = {
-      SimpleEnglishTokenizer() ~> // tokenize on space and punctuation
-        MinimumLengthFilter(3) // take terms with >=3 characters
-    }
+  def getLLDADataset(infile: File, tokenizer: Tokenizer = _tokenizer): LabeledLDADataset[(String, scala.Iterable[String], scala.Iterable[String])] = {
+    val trainSource = CSVFile(infile) ~> IDColumn(1)
 
     val text = {
       trainSource ~> // read from the source file
@@ -133,11 +141,20 @@ object SplitPLADMaxentExperiment extends SplitExperiment with MaxentDiscriminant
       termSmoothing = 0.01, topicSmoothing = 0.01);
 
     // Name of the output model folder to generate
-    val modelPath = new File(getTmpDir.getAbsolutePath+File.separator+"plda-updown-" + trainDataset.signature + "-" + modelParams.signature);
+    val modelPath = new File(getTmpDir.getAbsolutePath + File.separator + "plda-updown-" + trainDataset.signature + "-" + modelParams.signature);
 
     // Trains the model, writing to the given output path
     val model = TrainCVB0PLDA(modelParams, trainDataset, output = modelPath, maxIterations = getNumIterations);
+    model.getTopicTermDistribution(0)
+    model.pTopicTerm(0,0)
+    model.termIndex
+    model.numTerms
+    model.numTopics
+    val modelTopicTermMatrix = (for (i <- 0 until model.numTopics) yield {
+      model.getTopicTermDistribution(i)
+    }).toArray
     val trainMap = trainSet.map(tweet => (tweet.id, tweet)).toMap
+
     val trainDistributions = InferCVB0PLDADocumentTopicDistributions(model, trainDataset).toList
     val labelsToTopicDists = scala.collection.mutable.Map[SentimentLabel.Type, List[Array[Double]]]().withDefaultValue(Nil)
     for ((outId, dist) <- trainDistributions) yield {
@@ -146,16 +163,31 @@ object SplitPLADMaxentExperiment extends SplitExperiment with MaxentDiscriminant
       labelsToTopicDists(inLabel) = dist :: labelsToTopicDists(inLabel)
     }
     val discriminantFn = getDiscriminantFn(labelsToTopicDists.toMap)
-
     val testFile = createCSVIntermediate(testSet, "test")
-    val testDataset = getLLDADataset(testFile)
+    val testDataset = getLLDADataset(testFile, model.tokenizer match {
+      case Some(tokenizer) =>
+        tokenizer
+      case _ =>
+        _tokenizer
+    })
     val testMap = testSet.map(tweet => (tweet.id, tweet)).toMap
-    val testDistributions = InferCVB0PLDADocumentTopicDistributions(model, testDataset).toList
-
-    (for ((outId, topicDist) <- testDistributions) yield {
-      val GoldLabeledTweet(inId, inUID, inFeatures, inLabel) = testMap(outId)
-      assert(outId.equals(inId))
-      val (outLabel: String, outcomes: String) = discriminantFn(topicDist.map(d => d.toFloat))
+    (for (doc <- testDataset.iterator) yield {
+      val termTopics = (for (term <- doc.terms) yield {
+        val probs = Array.ofDim[Double](model.numTopics)
+        for (topic <- 0 until model.numTopics) {
+          probs(topic) += modelTopicTermMatrix(topic)(term)
+        }
+        probs.indexOf(probs.max)
+      })
+      val topicProportions = Array.ofDim[Double](model.numTopics)
+      for (topic <- termTopics) {
+        topicProportions(topic) += 1.0
+      }
+      for (topic <- 0 until model.numTopics) {
+        topicProportions(topic) /= model.numTopics
+      }
+      val GoldLabeledTweet(inId, inUID, inFeatures, inLabel) = testMap(doc.id)
+      val (outLabel: String, outcomes: String) = discriminantFn(topicProportions.map(d => d.toFloat))
       logger.trace("labeling id:%s gold:%2s with label:%2s from outcomes:%s".format(
         inId,
         inLabel.toString,
@@ -167,3 +199,12 @@ object SplitPLADMaxentExperiment extends SplitExperiment with MaxentDiscriminant
 
   def after() = 0
 }
+/*
+val (outLabel: String, outcomes: String) = discriminantFn(topicDist.map(d => d.toFloat))
+      logger.trace("labeling id:%s gold:%2s with label:%2s from outcomes:%s".format(
+        inId,
+        inLabel.toString,
+        outLabel.toString,
+        outcomes))
+      SystemLabeledTweet(inId, inUID, inFeatures, inLabel, SentimentLabel.figureItOut(outLabel))
+ */
