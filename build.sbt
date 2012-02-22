@@ -1,3 +1,7 @@
+import AssemblyKeys._ // put this at the top of the file
+
+seq(assemblySettings: _*)
+
 name := "Updown"
 
 version := "0.1.2"
@@ -28,3 +32,5 @@ seq(com.github.retronym.SbtOneJar.oneJarSettings: _*)
 libraryDependencies += "commons-lang" % "commons-lang" % "2.6"
 
 mainClass in oneJar := Some("updown.Run")
+
+mainClass in assembly := Some("updown.Run")
