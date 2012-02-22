@@ -15,7 +15,7 @@ abstract class StaticExperiment extends Experiment {
 
   def after(): Int
 
-  def main(args: Array[String]) {
+  def apply(args: Array[String]) {
     try {
       parser.parse(args)
 

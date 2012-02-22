@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="tmt-0.4.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/tmt-0.4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../tmt-0.4.0-src/src" />
+    </SOURCES>
+  </library>
+</component>

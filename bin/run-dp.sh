@@ -29,10 +29,11 @@ case $CMD in
         for k in 25 50 75 100; do
           alpha=$( echo - | awk "{ print 50/$k }" )
           echo "STAT: $fold $pipe lda $k"
-          updown 3 run updown.app.experiment.topic.lda.SplitLDAMaxentExperiment --numTopics $k --alpha $alpha --beta 0.01 --iterations 1000 --name Dp_"$fold"_"$pipe"Lda$k -G $out/dp.$pipe.$fold.train.updown -g $out/dp.$pipe.$fold.test.updown
+          java -Xmx3g -jar ~/repos/updown/target/updown-0.1.0-one-jar.jar experiment split lda-maxent --numTopics $k --alpha $alpha --beta 0.01 --iterations 100 --name Dp_"$fold"_"$pipe"Lda$k -G $out/dp.$pipe.$fold.train.updown -g $out/dp.$pipe.$fold.test.updown
         done
-        echo "STAT: $fold $pipe maxent"
-        updown run updown.app.experiment.maxent.SplitMaxentExperiment --name Dp_"$fold"_"$pipe"Maxent -G $out/dp.$pipe.$fold.train.updown -g $out/dp.$pipe.$fold.test.updown
+        sigma=0.0
+        echo "STAT: $fold $pipe maxent-sig$sigma"
+        java -jar ~/repos/updown/target/updown-0.1.0-one-jar.jar experiment split maxent --iterations 100 --sigma $sigma -G $out/dp.$pipe.$fold.train.updown -g $out/dp.$pipe.$fold.test.updown
       done
     done
     ;;

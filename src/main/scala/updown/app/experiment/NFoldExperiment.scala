@@ -54,7 +54,7 @@ abstract class NFoldExperiment extends Experiment {
     }).iterator
   }
 
-  def main(args: Array[String]) {
+  def apply(args: Array[String]) {
     try {
       parser.parse(args)
       val nFolds: Int = n.value.getOrElse(10)

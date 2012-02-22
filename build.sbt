@@ -1,6 +1,6 @@
 name := "Updown"
 
-version := "0.1.0"
+version := "0.1.2"
 
 organization := "OpenNLP"
 
@@ -22,3 +22,9 @@ javacOptions ++= Seq("-Xlint")
 
 // append -deprecation to the options passed to the Scala compiler
 scalacOptions ++= Seq("-deprecation", "-Xlint")
+
+seq(com.github.retronym.SbtOneJar.oneJarSettings: _*)
+
+libraryDependencies += "commons-lang" % "commons-lang" % "2.6"
+
+mainClass in oneJar := Some("updown.Run")

@@ -88,7 +88,7 @@ abstract class GenericPreprocessor extends Logging {
 
   def before() {}
 
-  def main(args: Array[String]) {
+  def apply(args: Array[String]) {
     logger.debug(args.toList.toString)
     try {
       parser.parse(args)

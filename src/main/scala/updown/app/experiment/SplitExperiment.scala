@@ -20,11 +20,13 @@ abstract class SplitExperiment extends Experiment {
 
   def after(): Int
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]) = apply(args)
+  
+  def apply(args: Array[String]) {
     try {
       parser.parse(args)
       val trainSet: List[GoldLabeledTweet] = goldTrainSet.value.toList.flatMap((s)=>TweetFeatureReader(s))
-      val testSet: List[GoldLabeledTweet] = goldTrainSet.value.toList.flatMap((s)=>TweetFeatureReader(s))
+      val testSet: List[GoldLabeledTweet] = goldTestSet.value.toList.flatMap((s)=>TweetFeatureReader(s))
       if (trainSet.length == 0) {
         parser.usage("no training instances specified")
       }
