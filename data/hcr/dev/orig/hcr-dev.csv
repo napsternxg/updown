@@ -1,4 +1,4 @@
-tweet id,user id,username,content,sentiment,target,annotator id,comment,dispute
+tweet id,user id,username,content,sentiment,target,annotator id
 10830146586,18767699,CBSNewsHotSheet,"Despite reports, Pelosi aides say Rep. Stupak is not a ''yes'' vote yet. #hcr",neutral,hcr,jbaldridge
 10829805730,756018,jdcoffman,Looks like Pelosi is getting ready to play whack-a-mole with her giant gavel #hcr,negative,dems,jbaldridge,Making an inference here that the tweeter is trying to make fun of Pelosi.
 10830200492,24608909,Lizzs_Lockeroom,It is great to know that there are people who care about #HCR and not what's going on in #Tigersbedroom ....,positive,hcr,jbaldridge
